@@ -1,1 +1,138 @@
-# versioned-traceability
+# Versioned Traceability
+
+Versioned Traceability adds Git change tracking and test evidence to
+[OpenFastTrace (OFT)](https://github.com/itsallcode/openfasttrace). OFT defines how
+requirements and other artifacts are written, versioned, and linked, and checks
+whether their declared coverage is satisfied.
+
+This tool compares requirements and tests with a starting commit, runs your test
+command, and saves a report identifying the source contents checked.
+
+## What you put in the repository
+
+Use OFT's syntax to write requirements and link them to supporting artifacts.
+For example, a Markdown requirement can declare implementation and unit-test
+coverage:
+
+```markdown
+### Session expiration
+`req~session-expiration~1`
+
+Sessions expire after 30 minutes of inactivity.
+
+Needs: impl, utest
+```
+
+Here, `1` is the requirement's revision, and `Needs` asks for implementation and
+unit-test coverage. Add references beside the relevant code and test assertions:
+
+```python
+# [impl->req~session-expiration~1]  # In the implementation
+# [utest->req~session-expiration~1] # In its test
+```
+
+OFT checks that the required references exist and use the right revision.
+Your test command checks behavior. Review determines whether the requirements
+and assertions are adequate. Other artifact types and coverage chains are
+supported; see the [session example](examples/session) for complete files.
+
+## Install
+
+Requires Python 3.11+, Git, and Java 17+ on Linux or macOS. In a Python virtual
+environment, from this tool's checkout:
+
+```sh
+python3 -m pip install .
+vt install-oft
+```
+
+The OFT installer downloads and checksum-verifies the configured release.
+For an existing JAR, set `VT_OFT_JAR` or pass `--oft-jar` to `vt check`.
+
+## Check a change
+
+You work in **one checkout**. The tool reads commits from Git and makes temporary
+source snapshots automatically. Your working branch stays unchanged.
+
+`vt check` works without arguments once the project has a committed scope:
+
+| Argument | Default |
+| --- | --- |
+| `--repo` | The repository containing the current directory. |
+| `--base` | The common ancestor of your branch and the repository's default branch. |
+| `--candidate` | `worktree`: current files, including uncommitted changes. |
+| `--scope` | `scope.json` from the baseline commit. |
+| `--out` | A fresh temporary directory; the command prints the evidence path. |
+
+On a feature branch, the comparison includes your commits and local edits. On
+the default branch itself, the baseline is `HEAD`, so it checks local edits.
+Pass `--base COMMIT` to choose a different starting point, including when working
+from another feature or release branch. Default-branch detection uses local Git
+refs; see the [reference](docs/contract.md#commands) for details.
+
+### 1. Set up the scope
+
+Copy [scope.json](examples/session/scope.json) and adapt its paths and test
+command to your project. Set `tests.format` to `junit` for JUnit XML, or
+`command` to use the command's exit status and log; omit `report` for the latter.
+
+Commit the reviewed `scope.json` at the repository root with the starting
+requirements, references, and tests. Checks read the scope from the baseline,
+so edits to the working copy cannot change their own checking rules. To use a
+separately maintained scope, pass `--scope /path/to/trusted-scope.json`.
+
+### 2. Validate the starting commit once
+
+From your project's checkout:
+
+```sh
+vt check --base HEAD --candidate HEAD
+```
+
+Using the **same commit** for both flags checks that the starting requirements,
+references, and tests pass. Later checks trace both versions and run the
+candidate's tests.
+
+### 3. Check your edits
+
+Edit your files normally, then run:
+
+```sh
+vt check
+```
+
+Each run gets a new output directory. Use `--out ../check-1` to retain evidence
+outside temporary storage; the directory must be outside the repository and
+must not already exist. Recheck after edits: a previous report describes the
+earlier contents. The command prints the selected baseline commit as well as the
+evidence path.
+
+## Read the result
+
+| Exit | Meaning |
+| --- | --- |
+| 0 | Automated checks passed; no specification or test files changed. |
+| 4 | Automated checks passed; requirement or test changes need review. |
+| 1, 2, 3 | Validation failed, could not run, or had an empty scope. |
+
+The output contains `evidence.json` with the outcome, trace and test logs,
+`review.patch` with requirement/test changes, and source manifests. Handle
+pending review in your existing review workflow; a check does not approve edits.
+
+To confirm that a later commit contains exactly the files already checked, use
+the evidence path printed by the check:
+
+```sh
+vt verify --candidate HEAD --evidence /path/to/check/evidence.json
+```
+
+Verification uses the same defaults and matches contents without rerunning
+tests. If the baseline has moved, or you supplied `--base` or `--scope` for the
+check, supply the same baseline and scope here. For exit-4 evidence,
+`--allow-pending-review` permits matching while leaving review pending.
+
+Tests run in a snapshot that omits Git metadata and ignored local environments,
+and rejects symlinks and submodules. Arrange test dependencies accordingly.
+See the [reference](docs/contract.md) for configuration, evidence, and limits;
+[test instructions](docs/validation.md); and the packaged
+[skill](versioned_traceability/skills/versioned-traceability/SKILL.md) for agents.

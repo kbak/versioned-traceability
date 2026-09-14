@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "name": "experimental-session-expiration",
+  "inputs": ["requirements.md", "session.py", "tests", "run_tests.py"],
+  "specification_paths": ["requirements.md"],
+  "test_paths": ["tests", "run_tests.py"],
+  "required_coverage": {"req": ["impl", "utest"]},
+  "tests": {
+    "command": ["python3", "run_tests.py"],
+    "report": "test-results.xml",
+    "timeout_seconds": 30
+  }
+}

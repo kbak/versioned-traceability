@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "versioned-traceability"
+version = "0.2.0"
+description = "Git-native traceability checks and version-bound verification evidence"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["junitparser>=5.0.3,<6"]
+
+[project.scripts]
+vt = "versioned_traceability.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["versioned_traceability*"]
+
+[tool.setuptools.package-data]
+versioned_traceability = ["skills/*/SKILL.md"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
