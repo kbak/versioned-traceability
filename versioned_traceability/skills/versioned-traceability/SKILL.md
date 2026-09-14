@@ -1,7 +1,13 @@
 ---
 name: versioned-traceability
-description: Implement or review a task with OpenFastTrace, using a supplied baseline and scope to check linked documentation, code, tests, and source-bound evidence.
+description: Draft requirements or implement and review a task with OpenFastTrace, using the supplied scope and baseline to follow linked documentation, code, tests, and evidence.
 ---
+
+For requirements or design discussions, read
+[requirements guidance](references/requirements.md) and stay within the caller's
+discussion and authorization process. The execution steps below apply after
+implementation is authorized. Also read that guidance when updating requirements
+during implementation.
 
 Use the supplied task, repository, trusted scope, baseline, and evidence
 location. Read the affected requirements and find their references in code and

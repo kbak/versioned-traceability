@@ -76,10 +76,18 @@ Copy [scope.json](examples/session/scope.json) and adapt its paths and test
 command to your project. Set `tests.format` to `junit` for JUnit XML, or
 `command` to use the command's exit status and log; omit `report` for the latter.
 
-Commit the reviewed `scope.json` at the repository root with the starting
-requirements, references, and tests. Checks read the scope from the baseline,
-so edits to the working copy cannot change their own checking rules. To use a
-separately maintained scope, pass `--scope /path/to/trusted-scope.json`.
+Choose where to maintain the scope:
+
+- **In the project:** commit the reviewed `scope.json` at the repository root
+  with the starting requirements, references, and tests. Checks read it from the
+  baseline commit, so working-copy edits cannot change their own checking rules.
+- **In separate configuration:** pass `--scope /path/to/trusted-scope.json`.
+  This suits callers that maintain checking policy separately from the project.
+  The file is read as-is; keep that approved copy outside the candidate's control.
+
+Both setups support standalone checks. The test command's dependencies and
+environment must be available wherever the check runs. The examples below use
+the committed scope; add `--scope` to each command for a separate scope.
 
 ### 2. Validate the starting commit once
 

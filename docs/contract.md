@@ -77,14 +77,18 @@ valid. To use a design chain, for example, select `{"req": ["dsn"], "dsn":
 ["impl", "utest"]}`. OFT validates the relationships and revisions throughout
 the chain.
 
-The same scope applies to base and candidate. By default, it comes from the
-baseline commit; changes to the candidate's copy do not change the checking
-rules. A missing or invalid baseline scope fails without falling back to the
-working copy. For an explicit `--scope`, keep a trusted copy outside candidate
-control for checking and verification. The path can be inside or outside the
-repository. Changes to the approved scope require authorization and a fresh
-check. OFT's `Status: approved` and files written by the candidate do not grant
-that authorization.
+The scope can be maintained in the project repository or in separate
+configuration. The same approved scope applies to base and candidate.
+
+By default, it comes from the baseline commit; changes to the candidate's copy
+do not change the checking rules. A missing or invalid baseline scope fails
+without falling back to the working copy. An explicit `--scope` reads the file
+as-is, even when it is inside the repository: `--scope scope.json` does not read
+the baseline version. Keep that approved copy outside candidate control for
+checking and verification. Trust depends on the selected version and who can
+change it, not its directory. Changes to the approved scope require authorization
+and a fresh check. OFT's `Status: approved` and files written by the candidate
+do not grant that authorization.
 
 Unknown fields, duplicate JSON keys, invalid types, and unsupported schema
 versions are errors. Both versions must pass tracing and configured coverage
