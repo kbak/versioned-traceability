@@ -10,14 +10,57 @@ a separate draft; add --candidate worktree to include existing local changes or
 select a historical commit explicitly. An explicitly requested whole-project
 scope should not be silently replaced with one subsystem.
 
-The execution environment needs Python 3.11+, Git, Java 17+, the current
-versioned-traceability package and the project's test dependencies. Reuse an
-existing installation. If setup is needed, use a suitable isolated Python
-environment, install the package from its checkout with
-`python -m pip install /path/to/versioned-traceability`, and run `vt install-oft`
-or use an existing pinned JAR via VT_OFT_JAR. Follow the project's own instructions
-for test dependencies. Explain any prerequisite that cannot be resolved rather
-than asking the caller to reconstruct the setup procedure.
+### Acquire and install tooling
+
+Remember the target project's absolute path before setup. Tool checkouts and
+Python environments belong in an agent-managed location outside that project,
+so setup does not dirty its worktree. Preserve any existing tool checkout's local
+changes; use a fresh directory if fetching a requested revision would disturb it.
+
+When invoked from a GitHub link, use the repository and ref in that link. Clone
+with HTTPS, check out the requested branch/tag/commit, then resolve HEAD to its
+full commit ID. Read SKILL.md and this reference from the resulting checkout and
+install from that checkout. A branch link such as main may advance: select its
+commit once for the run and use the code and guidance together. If no source/ref
+was supplied with an unversioned skill copy, use
+`https://github.com/kbak/versioned-traceability.git` at main. An unavailable pinned
+revision is a blocker; do not silently substitute another one.
+
+For local development, use the supplied checkout including intended uncommitted
+changes. For a packaged skill or prepared runtime, reuse its accompanying package
+and reference. Do not fetch a newer upstream just because one exists. An installed
+package is reusable when its provenance matches the supplied source; a matching
+version number alone does not establish that. If uncertain, install from the chosen
+checkout into a fresh external environment. Do not mix a remote skill with an
+unrelated older vt on PATH.
+
+The execution environment needs Python 3.11+, Git, Java 17+, the
+versioned-traceability package and the project's test dependencies. Check available
+tools and resolve routine setup within the task's permissions. Do not alter the
+target's dependency manifests just to install traceability tooling. For example,
+after choosing absolute paths in target_repo, vt_checkout and vt_env, and acquiring
+the requested checkout:
+
+```sh
+python3 -m venv "$vt_env"
+"$vt_env/bin/python" -m pip install "$vt_checkout"
+"$vt_env/bin/python" -m versioned_traceability recover --help
+"$vt_env/bin/python" -m versioned_traceability recover-check --help
+"$vt_env/bin/python" -m versioned_traceability install-oft
+"$vt_env/bin/python" -m versioned_traceability recover --repo "$target_repo"
+```
+
+Use the same interpreter for subsequent checks. Reuse a pinned OFT JAR via
+VT_OFT_JAR instead of downloading it again when available. The normal installer
+downloads and checksum-verifies the package's pinned OFT release. Follow the
+project's own instructions for test dependencies and keep its real runner usable
+in the check's execution environment; installing vt alone does not install those
+dependencies. Python/Git/Java installation, network or execution restrictions that
+cannot be resolved are specific blockers to explain, not a reason to ask the
+caller to reconstruct all setup commands.
+
+Include the selected tool source/revision (or supplied local/package provenance)
+and retained environment location in the handoff so another agent can resume.
 
 Run `vt recover --repo /project`. Without --out it keeps the original snapshot
 and instructions in the worktree's Git metadata directory and remembers the

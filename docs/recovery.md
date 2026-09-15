@@ -16,6 +16,14 @@ local changes. It handles prerequisites, bundle preparation, drafting and checks
 You do not need to supply commands, output paths, or a scope.json yourself.
 Existing caller decisions are reused. The commands below also support manual use.
 
+A GitHub link to the skill is enough to start when the agent has shell access to
+the target project and network access for missing downloads. The skill directs it
+to fetch the tool repository/ref from that link, read the matching supporting
+reference and install tooling in an external Python environment. It retains the
+target project path so recovery is run against the intended project. Supplied
+local/package versions are reused rather than upgraded implicitly. The agent
+reports concrete access or prerequisite blockers when setup cannot proceed.
+
 ## What you receive
 
 By default, recovery leaves proposed changes in a clean Git checkout for review
@@ -220,6 +228,10 @@ vt check --repo /path/to/project --base HEAD --candidate HEAD
 If the reviewed scope is stored separately, pass it with --scope. Recovery checks
 use disposable validation commits; they cannot replace this check of the adopted
 commit. Subsequent feature work uses the existing vt check / vt verify workflow.
+Point the agent to the
+[development skill](../versioned_traceability/skills/versioned-traceability/SKILL.md)
+for those tasks. It handles standalone setup and the project's committed checking
+policy; retain its reference in the project's agent instructions for later sessions.
 This also avoids adding a second approval system: the caller records acceptance
 through its normal review process, and the portable tool supplies evidence.
 

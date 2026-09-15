@@ -5,9 +5,34 @@ description: Guide baseline recovery for an existing repository, from choosing s
 
 Use this for onboarding an existing project, including one with structured
 requirements that need reconciliation. A request such as "Recover this repository's baseline" is enough
-to start. Guide the caller through the process; do not require a prepared bundle,
-CLI arguments, or knowledge of the artifact schema. Read the
-[setup and bundle contract](references/recovery.md) for commands and formats.
+to start, including when the caller supplies only this skill's GitHub link.
+Guide the caller through the process; do not require a prepared bundle, installed
+tooling, CLI arguments, or knowledge of the artifact schema.
+
+Identify and retain the target project's absolute path before acquiring tooling.
+If starting from a GitHub skill URL and a matching tool checkout is unavailable,
+clone that repository into a new agent-managed directory outside the target project.
+Honor the branch, tag or commit in the supplied URL; resolve it to a commit and
+read both this skill and references/recovery.md from that same checkout. For an
+unqualified copy of this skill, the upstream is
+`https://github.com/kbak/versioned-traceability.git`, branch `main`. Keep the
+resolved tooling commit for the handoff. Use HTTPS for a public checkout; do not
+require the caller to clone the tool or configure GitHub SSH access.
+
+For a supplied local checkout, packaged skill or preconfigured factory runtime,
+reuse its matching code and included reference. Preserve the caller's chosen
+version and local changes; do not replace them with upstream main. If code is
+missing, fetch the supplied repository/ref into a separate checkout. When only
+an unversioned skill copy is available, use upstream main and reread its complete
+guidance. Resolve relative references against the tool checkout, not the target
+project; an inline reference supplied by the adapter needs no separate download.
+
+Read the [setup and bundle contract](references/recovery.md), then install any
+missing tooling in an isolated Python environment outside the target project.
+Follow that contract for prerequisites, revision matching and commands. Keep
+the target path explicit when running recovery after setup. This skill needs an
+agent with repository, shell and (when downloading) network access; if a capability
+is unavailable, explain the specific blocker and request only the missing access.
 
 If no bundle was supplied, identify the repository from the workspace and inspect
 its documentation, source layout, test setup, and Git status. Ask for the repository

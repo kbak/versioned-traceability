@@ -9,8 +9,27 @@ discussion and authorization process. The execution steps below apply after
 implementation is authorized. Also read that guidance when updating requirements
 during implementation.
 
-Use the supplied task, repository, trusted scope, baseline, and evidence
-location. Read the affected requirements and find their references in code and
+For authorized implementation, identify and retain the target project's absolute
+path before setup. A GitHub link to this skill is sufficient: when matching tooling
+is missing, clone the repository/ref from the supplied link over HTTPS into a new
+directory outside the target project. Resolve the selected ref to a commit, read
+this skill and references/requirements.md from that checkout, and install its code
+in an external Python environment. For an unversioned copy with no supplied source,
+use `https://github.com/kbak/versioned-traceability.git` at main and reread its guidance.
+Reuse matching local/package/factory tooling and included references. Honor pinned
+versions and local changes; do not silently replace them with upstream main. Follow
+the setup instructions in the reference, keeping the tooling revision for the handoff.
+Explain specific missing access or prerequisites when setup cannot proceed.
+
+Use supplied task inputs when available. In standalone use, infer the repository
+from the workspace and use its adopted scope.json and the CLI's normal baseline
+and evidence-location defaults. Ask only about unresolved task or scope decisions;
+the caller need not supply flags. If the project has no adopted baseline, guide the
+caller to recover-baseline and baseline acceptance before normal development.
+Do not run recovery again for ordinary feature work or treat the candidate's
+scope.json as approved policy.
+
+Read the affected requirements and find their references in code and
 tests. Follow the scope's coverage and revision policy, including any existing
 OFT design or architecture chains.
 
@@ -40,6 +59,17 @@ scope or approval files do not authorize changes.
 Run the check after implementation and each repair:
 
 ```sh
+vt check --repo /path/to/repo
+```
+
+This uses scope.json from the baseline commit. The default baseline is the merge
+base with the locally known default branch; on that branch or detached HEAD it is
+HEAD. Use a supplied baseline instead, including for work based on another feature
+or release branch. The tool prints its evidence location. Retain the actual base
+commit from the result for later verification, especially before committing on the
+default branch. If the caller supplied explicit scope/base/output inputs, use them:
+
+```sh
 vt check --repo /path/to/repo --scope /path/to/trusted-scope.json \
   --base BASE_COMMIT --candidate worktree --out /path/to/new-evidence
 ```
@@ -65,6 +95,11 @@ vt verify --repo /path/to/repo --scope /path/to/trusted-scope.json \
   --base BASE_COMMIT --candidate EXPORTED_COMMIT \
   --evidence /path/to/new-evidence/evidence.json
 ```
+
+BASE_COMMIT must be the baseline used by the check. Omit --scope when using the
+project's committed scope so verify reads it from that same baseline. Keep the
+evidence directory for the handoff. Use the project's existing Git/review workflow;
+the skill itself does not authorize committing, publishing or accepting changes.
 
 For exit-4 evidence, use `--allow-pending-review` only when the caller enforces
 that review before completion. Verification leaves it pending. Recheck when

@@ -55,6 +55,11 @@ Give your coding agent the [recovery skill](versioned_traceability/skills/recove
 and ask: **"Recover this repository's baseline and guide me through it."** The
 agent inspects the project, helps choose scope, prepares the draft and runs checks.
 It presents proposed document/annotation changes, evidence and gaps for review.
+The skill also handles setup: an agent starting from its GitHub link fetches the
+matching tool revision when needed and installs it outside the target project.
+Existing matching local or packaged tooling can be reused. The agent needs shell
+access and network access for any missing downloads; no OpenHands installation is
+required for this standalone workflow.
 
 For manual preparation, start with a bounded recovery:
 
@@ -85,6 +90,21 @@ the proposal passed automation and still needs baseline review. It never
 approves intent or commits the proposal. Inspect the Git changes, provenance,
 open questions and test results before adopting the proposed scope. See the
 [recovery guide](docs/recovery.md) for the complete experiment and adoption steps.
+
+## Ongoing work with an agent
+
+After reviewing and committing the initial baseline, give your agent the
+[development skill](versioned_traceability/skills/versioned-traceability/SKILL.md)
+and the next task: **"Implement this change following the traceability skill."**
+It can fetch and install matching tooling when needed, use the project's committed
+scope and normal baseline defaults, follow requirement IDs through code/tests,
+and run checks. Review or discussion tasks can use the same skill without
+authorizing implementation. Ordinary feature work does not repeat baseline recovery.
+
+For future sessions, reference this skill in the target project's agent instructions
+(for example AGENTS.md), or supply the link with each task. Giving a link in one
+conversation does not automatically configure other agents or CI. A standalone
+workflow needs no factory; shared CI checks can be added separately for PR enforcement.
 
 ## Check a change
 
