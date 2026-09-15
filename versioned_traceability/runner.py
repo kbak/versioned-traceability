@@ -4,9 +4,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from . import __version__
-from .common import CheckError, canonical, digest, read_json, relative_path, within, write_json
+from .common import CheckError, canonical, digest, read_json, within, write_json
 from .config import load_baseline_scope, load_scope
-from .evidence import read_statement, statement, test_statement
+from .evidence import check_artifacts, read_statement, statement, test_statement
 from .oft import OFT_SHA256, OFT_VERSION, policy_diagnostics, trace, validate_jar
 from .review import changes, review_diff, review_record, revision_diagnostics
 from .snapshot import changed_source, repository, resolve_commit, snapshot
@@ -191,7 +191,6 @@ def verify(
     except (KeyError, TypeError) as exc:
         raise CheckError("Evidence outcome fields are incomplete or malformed") from exc
     directory = evidence_path.resolve().parent
-    artifacts = evidence.get("artifacts")
     required = {
         "scope.json",
         "base-manifest.json",
@@ -214,17 +213,7 @@ def verify(
     )
     if scope["tests"].get("format", "junit") == "junit":
         required.add("tests.xml")
-    if not isinstance(artifacts, dict) or not required.issubset(artifacts):
-        raise CheckError("Evidence artifact inventory is incomplete")
-    for name, expected in artifacts.items():
-        relative_path(name)
-        path = directory / name
-        if (
-            path.is_symlink()
-            or not path.resolve().is_relative_to(directory)
-            or digest(path.read_bytes()) != expected
-        ):
-            raise CheckError(f"Evidence artifact missing or changed: {name}")
+    artifacts = check_artifacts(evidence, directory, required)
     test_format = scope["tests"].get("format", "junit")
     if (
         evidence["tests"].get("format") != test_format

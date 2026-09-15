@@ -179,6 +179,21 @@ evidence path.
 
 ## Read the result
 
+To explain one artifact from a saved check, use its complete OFT ID:
+
+```sh
+vt explain 'req~session-expiration~1' --evidence /path/to/check/evidence.json
+```
+
+This shows OFT coverage and immediate links, the recorded test outcome, source
+and scope identity, and pending review. Add `--format json` for tools or agents,
+or `--snapshot base` for the baseline. It uses OFT's native XML graph report over
+the retained export; it does not need the original checkout or rerun tests.
+Exit 0 means the explanation was produced, even when the recorded check failed.
+See the [explanation reference](docs/contract.md#explain-saved-evidence) for limits.
+
+For `vt check`, the exit codes mean:
+
 | Exit | Meaning |
 | --- | --- |
 | 0 | Automated checks passed; no specification or test files changed. |

@@ -152,3 +152,30 @@ def changed_source(snap):
         except OSError:
             changed.append(entry["path"])
     return changed
+
+
+def archive_snapshot(source, commit, destination):
+    """Capture a caller-supplied source archive; commit attribution is external."""
+    source = source.resolve(strict=True)
+    destination.mkdir()
+    manifest = []
+    for parent, directories, names in os.walk(source):
+        directories[:] = [name for name in directories if name != ".git"]
+        for name in directories + names:
+            path = Path(parent) / name
+            if path.is_symlink():
+                raise CheckError(f"Symlinks are not supported: {path.relative_to(source)}")
+        for name in names:
+            if name == ".git":
+                continue
+            path = Path(parent) / name
+            info = path.stat()
+            if not stat.S_ISREG(info.st_mode):
+                raise CheckError(f"Expected a regular source file: {path.relative_to(source)}")
+            mode = "100755" if info.st_mode & stat.S_IXUSR else "100644"
+            manifest.append(
+                put_file(destination, path.relative_to(source).as_posix(), mode, path.read_bytes())
+            )
+    return Snapshot(
+        destination, commit, "archive", sorted(manifest, key=lambda entry: entry["path"])
+    )

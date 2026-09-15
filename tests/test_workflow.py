@@ -20,7 +20,7 @@ from versioned_traceability.runner import check, verify
 FIXTURE = Path(__file__).resolve().parents[1] / "examples" / "session"
 
 
-class WorkflowTests(unittest.TestCase):
+class WorkflowFixture(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.jar = default_jar().resolve()
@@ -99,6 +99,8 @@ class WorkflowTests(unittest.TestCase):
             code = main(list(args))
         return code, stdout.getvalue(), stderr.getvalue()
 
+
+class WorkflowTests(WorkflowFixture):
     def test_cli_defaults_check_local_changes_from_subdirectory_and_verify(self):
         self.replace("session.py", "30 * 60", "1800")
         before = self.git("status", "--porcelain")

@@ -1,12 +1,29 @@
 """Unsigned in-toto statements; no signing, transport, or approval framework."""
 
-from .common import CheckError
+from .common import CheckError, digest, relative_path
 
 EXIT_CODES = {"passed": 0, "rejected": 1, "error": 2, "empty": 3, "review_required": 4}
 
 STATEMENT = "https://in-toto.io/Statement/v1"
 CHECK_TYPE = "https://github.com/kbak/versioned-traceability/check/v0.2"
 TEST_TYPE = "https://in-toto.io/attestation/test-result/v0.1"
+
+
+def check_artifacts(evidence, directory, required):
+    """Match bundle files to recorded hashes; producer trust remains external."""
+    artifacts = evidence.get("artifacts")
+    if not isinstance(artifacts, dict) or not set(required).issubset(artifacts):
+        raise CheckError("Evidence artifact inventory is incomplete")
+    for name, expected in artifacts.items():
+        relative_path(name)
+        path = directory / name
+        if (
+            path.is_symlink()
+            or not path.resolve().is_relative_to(directory)
+            or digest(path.read_bytes()) != expected
+        ):
+            raise CheckError(f"Evidence artifact missing or changed: {name}")
+    return artifacts
 
 
 def statement(predicate, predicate_type=CHECK_TYPE):

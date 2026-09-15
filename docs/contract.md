@@ -13,10 +13,46 @@ including which conclusions the evidence supports.
 | `vt install-oft` | None; optional `--destination DIRECTORY` | Downloads and checksum-verifies the configured OFT release. |
 | `vt check` | None | Traces both versions, runs candidate tests, and writes evidence. |
 | `vt verify` | `--evidence` | Matches saved evidence to the selected scope, base, and candidate. |
+| `vt explain` | Complete OFT item ID and `--evidence` | Explains one item from the retained OFT graph and check evidence. |
 | `vt recover` | None; defaults to current clean repository at HEAD | Preserves original source and prepares in-place recovery; `--isolated` creates a separate draft. No automatic extraction or tests. |
 | `vt recover-check` | None for an active in-place recovery; `--recovery` for an isolated bundle | Validates a proposed baseline; automation never grants adoption. |
 
 Recovery has its own [guide and provisional bundle schema](recovery.md).
+
+### Explain saved evidence
+
+```sh
+vt explain 'req~session-expiration~1' --evidence /path/to/check/evidence.json
+vt explain 'req~session-expiration~1' --evidence /path/to/check/evidence.json \
+  --snapshot base --format json
+```
+
+`--snapshot` selects `candidate` (default) or `base`; `--format` selects `text`
+(default) or `json`. `--oft-jar` and `--java` work as for `check`. No Git checkout
+is required. The command verifies retained artifact hashes and source/scope
+bindings, then runs the pinned OFT `trace -o aspec` reporter on the saved item
+export. OFT computes coverage and links; vt adds the recorded execution and
+review context. It does not run the project's test command or write to the bundle.
+
+The provisional JSON schema 1 exposes `artifact` (description, location, Needs,
+OFT shallow/deep coverage, `covers`, `covered_by`), immediate `related` locations,
+`source`, `scope`, `recorded_check_status`, `tests`, `review`, and `limitations`.
+Follow a related ID with another invocation to traverse a design chain. Coverage
+refers to the native OFT graph; the recorded diagnostics also show policy failures.
+
+`linked_test_execution` remains `not_established`: suite/command outcomes do not
+map individual executions to OFT IDs. Baseline explanations report
+`not_recorded_for_baseline` for tests, because this bundle's test run targets the
+candidate. `review` is the check's recorded gate, not a later approval. Recovery
+origin and caller approval decisions are outside ordinary check bundles.
+
+Exit 0 means successful inspection, including inspection of rejected checks.
+Missing IDs/revisions, incomplete exports, changed artifacts, or tool errors
+return exit 2. An explanation describes saved evidence; it does not match the
+current working tree, authenticate the unsigned producer, or establish program
+correctness. Use `vt verify` to match current source.
+
+### Check and verify inputs
 
 For both `check` and `verify`:
 

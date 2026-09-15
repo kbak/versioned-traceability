@@ -8,6 +8,7 @@ from pathlib import Path
 from . import __version__
 from .common import CheckError
 from .evidence import EXIT_CODES
+from .explain import explain, render_explanation
 from .oft import default_jar, install_jar
 from .recovery import active_recovery, check_recovery, prepare
 from .runner import check, verify
@@ -58,6 +59,15 @@ def parser():
     )
     root.add_argument("--version", action="version", version=__version__)
     commands = root.add_subparsers(dest="action", required=True)
+    explaining = commands.add_parser(
+        "explain", help="Explain an OFT item using saved check evidence"
+    )
+    explaining.add_argument("identifier", help="Complete OFT item ID, including revision")
+    explaining.add_argument("--evidence", type=Path, required=True, help="Path to evidence.json")
+    explaining.add_argument("--snapshot", choices=("base", "candidate"), default="candidate")
+    explaining.add_argument("--format", choices=("text", "json"), default="text")
+    explaining.add_argument("--oft-jar", type=Path, default=default_jar())
+    explaining.add_argument("--java", default="java")
     install = commands.add_parser("install-oft", help="Download and checksum-verify OFT 4.9.0")
     install.add_argument("--destination", type=Path, default=default_jar().parent)
     recovery = commands.add_parser("recover", help="Prepare baseline recovery in a clean checkout")
@@ -145,6 +155,14 @@ def parser():
 def main(argv=None):
     args = parser().parse_args(argv)
     try:
+        if args.action == "explain":
+            result = explain(args.identifier, args.evidence, args.oft_jar, args.snapshot, args.java)
+            print(
+                json.dumps(result, indent=2)
+                if args.format == "json"
+                else render_explanation(result)
+            )
+            return 0
         if args.action == "install-oft":
             print(install_jar(args.destination))
             return 0

@@ -93,6 +93,15 @@ prove that each referenced test ran. If tests changed source, retain their
 outcome as diagnostic information and rerun on stable contents. A failed
 invocation cannot use an earlier passing bundle as its result.
 
+When inspecting a linked obligation or preparing a handoff, use
+`vt explain 'TYPE~NAME~REVISION' --evidence /path/to/check/evidence.json` to read
+OFT coverage and links together with recorded test/review context. Add
+`--format json` for structured output or `--snapshot base` for historical items.
+It reads the saved bundle without rerunning tests. Exit 0 means inspection
+succeeded, even for failed checks; use `recorded_check_status` and the actual
+check/verify results for completion. Its test result does not establish that
+each linked test executed.
+
 After export, verify the actual commit against the evidence:
 
 ```sh
