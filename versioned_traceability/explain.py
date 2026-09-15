@@ -6,6 +6,7 @@ from pathlib import Path
 from .common import CheckError, canonical, digest, read_json, run, xml_tree
 from .config import load_scope
 from .evidence import check_artifacts, read_statement
+from .execution import explain_execution, retained_execution_links
 from .oft import OFT_SHA256, OFT_VERSION, validate_jar
 
 
@@ -118,6 +119,12 @@ def explain(identifier, evidence_path, jar, snapshot="candidate", java="java"):
     tests = (
         evidence["tests"] if snapshot == "candidate" else {"status": "not_recorded_for_baseline"}
     )
+    links = (
+        retained_execution_links(evidence, directory, scope) if snapshot == "candidate" else None
+    )
+    execution_status, linked_tests, execution_diagnostics = explain_execution(
+        identifier, items, links, tests
+    )
     return {
         "schema_version": 1,
         "evidence": str(evidence_path),
@@ -139,11 +146,13 @@ def explain(identifier, evidence_path, jar, snapshot="candidate", java="java"):
             for key in ("status", "level", "source_status", "counts")
             if key in tests
         },
-        "linked_test_execution": "not_established",
+        "linked_test_execution": execution_status,
+        "linked_tests": linked_tests,
+        "execution_link_diagnostics": execution_diagnostics,
         "review": evidence.get("review", {"status": "not_recorded"}),
         "limitations": [
             "Describes the saved bundle; use vt verify to match current source. Artifact hashes do not authenticate the unsigned producer.",
-            "OFT coverage is structural. Command/suite results do not establish execution or adequacy of an individual linked test.",
+            "OFT coverage is structural. Linked execution outcomes describe only reported cases, not assertion adequacy, all required scenarios, or requirement satisfaction.",
             "Review is the recorded check gate, not an approval decision. Claim origin is not recorded in ordinary check bundles.",
         ],
     }
@@ -169,13 +178,24 @@ def render_explanation(result):
         [
             f"Recorded check: {result['recorded_check_status']}",
             f"Tests: {tests['status']} ({tests.get('level', 'no baseline execution recorded')}); source={tests.get('source_status', 'not recorded')}",
-            "Execution of linked test: not established",
+            "Execution of linked tests: " + result["linked_test_execution"].replace("_", " "),
             f"Recorded review gate: {result['review']['status']}",
             f"Source: {result['source']['sha256']}",
             f"Scope: {result['scope']['name']} ({result['scope']['sha256']})",
             f"Evidence: {result['evidence']}",
         ]
     )
+    for linked in result["linked_tests"]:
+        lines.append(f"  {linked['id']}: {linked['status'].replace('_', ' ')}")
+        for case in linked["cases"]:
+            name = " / ".join(
+                part for part in [*case["suite"], case["classname"], case["name"]] if part
+            )
+            lines.append(f"    {name}: {case['status']}")
+            lines.extend(f"      {message}" for message in case["diagnostics"])
+            for detail in case["details"]:
+                lines.append("      " + ": ".join(value for value in detail.values() if value))
+    lines.extend(f"Execution link: {message}" for message in result["execution_link_diagnostics"])
     lines.extend(f"Diagnostic: {message}" for message in result["recorded_diagnostics"])
     lines.extend(result["limitations"])
     return "\n".join(lines)

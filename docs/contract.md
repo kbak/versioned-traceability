@@ -40,8 +40,11 @@ OFT shallow/deep coverage, `covers`, `covered_by`), immediate `related` location
 Follow a related ID with another invocation to traverse a design chain. Coverage
 refers to the native OFT graph; the recorded diagnostics also show policy failures.
 
-`linked_test_execution` remains `not_established`: suite/command outcomes do not
-map individual executions to OFT IDs. Baseline explanations report
+`linked_test_execution` remains `not_established` without the optional
+[execution-link profile](../versioned_traceability/skills/versioned-traceability/references/execution-links.md).
+With that profile, `linked_tests` retains per-artifact and per-case observations,
+and `execution_link_diagnostics` explains invalid or unavailable evidence.
+Baseline explanations report
 `not_recorded_for_baseline` for tests, because this bundle's test run targets the
 candidate. `review` is the check's recorded gate, not a later approval. Recovery
 origin and caller approval decisions are outside ordinary check bundles.
@@ -214,6 +217,20 @@ Snapshots omit `.git` and ignored local environments, reject symlinks and
 submodules, and leave Git LFS pointers unexpanded.
 
 ## Evidence files
+
+### Optional execution links
+
+For a JUnit scope, `tests.execution_links` can select format
+`junit-properties-v1` and a nonempty `artifact_types` list. JUnit testcase
+properties named `oft_id` then identify the exact OFT test artifacts executed.
+See the [profile and producer example](../versioned_traceability/skills/versioned-traceability/references/execution-links.md)
+for configuration, evidence fields, supported outcomes and limitations.
+
+This adds no runtime dependency or default execution-completeness gate. Unknown
+IDs or invalid supplied metadata reject the check; missing observations remain
+visible. With the profile disabled, existing behavior and bundles remain valid.
+
+### Bundle contents
 
 | Files | Contents |
 | --- | --- |

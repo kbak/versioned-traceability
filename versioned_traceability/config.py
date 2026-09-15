@@ -82,7 +82,7 @@ def validate_scope(scope):
     tests = scope["tests"]
     if (
         not isinstance(tests, dict)
-        or set(tests) - {"command", "report", "timeout_seconds", "format"}
+        or set(tests) - {"command", "report", "timeout_seconds", "format", "execution_links"}
         or {"command", "timeout_seconds"} - set(tests)
         or tests.get("format", "junit") not in {"junit", "command"}
     ):
@@ -100,6 +100,25 @@ def validate_scope(scope):
             raise CheckError("tests.report must name a file")
     elif "report" in tests:
         raise CheckError("command format records execution/logs and does not consume a report")
+    if "execution_links" in tests:
+        links = tests["execution_links"]
+        if (
+            tests.get("format", "junit") != "junit"
+            or not isinstance(links, dict)
+            or set(links) != {"format", "artifact_types"}
+            or links["format"] != "junit-properties-v1"
+            or not isinstance(links["artifact_types"], list)
+            or not links["artifact_types"]
+            or any(
+                not isinstance(kind, str) or not re.fullmatch(r"[A-Za-z]+", kind)
+                for kind in links["artifact_types"]
+            )
+            or len(set(links["artifact_types"])) != len(links["artifact_types"])
+        ):
+            raise CheckError(
+                "tests.execution_links requires JUnit, format junit-properties-v1, "
+                "and a nonempty unique artifact_types list"
+            )
     if type(tests["timeout_seconds"]) is not int or not 1 <= tests["timeout_seconds"] <= 86400:
         raise CheckError("tests.timeout_seconds must be between 1 and 86400")
     return scope

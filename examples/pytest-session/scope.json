@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "name": "pytest-session-expiration",
+  "inputs": ["requirements.md", "session.py", "tests", "conftest.py", "pytest.ini"],
+  "specification_paths": ["requirements.md"],
+  "test_paths": ["tests", "conftest.py", "pytest.ini"],
+  "required_coverage": {"req": ["impl", "utest"]},
+  "tests": {
+    "command": ["python3", "-m", "pytest", "-p", "no:cacheprovider", "--junitxml=test-results.xml"],
+    "report": "test-results.xml",
+    "timeout_seconds": 30,
+    "execution_links": {
+      "format": "junit-properties-v1",
+      "artifact_types": ["utest"]
+    }
+  }
+}

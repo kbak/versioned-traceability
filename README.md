@@ -192,6 +192,12 @@ the retained export; it does not need the original checkout or rerun tests.
 Exit 0 means the explanation was produced, even when the recorded check failed.
 See the [explanation reference](docs/contract.md#explain-saved-evidence) for limits.
 
+To associate individual reported test outcomes with OFT artifacts, enable the
+optional [execution-link profile](versioned_traceability/skills/versioned-traceability/references/execution-links.md).
+The [pytest example](examples/pytest-session) demonstrates explicit IDs,
+parameterized tests, and a collection hook. The existing JUnit parser is reused;
+pytest is a dependency of that example, not of the vt runtime.
+
 For `vt check`, the exit codes mean:
 
 | Exit | Meaning |

@@ -99,8 +99,11 @@ OFT coverage and links together with recorded test/review context. Add
 `--format json` for structured output or `--snapshot base` for historical items.
 It reads the saved bundle without rerunning tests. Exit 0 means inspection
 succeeded, even for failed checks; use `recorded_check_status` and the actual
-check/verify results for completion. Its test result does not establish that
-each linked test executed.
+check/verify results for completion. Suite success alone does not establish that
+each linked test executed. When the scope enables
+[execution links](references/execution-links.md), inspect `linked_tests` and
+individual outcomes. Preserve missing, skipped and ambiguous observations;
+`passed` here describes reported executions, not requirement satisfaction.
 
 After export, verify the actual commit against the evidence:
 

@@ -80,15 +80,18 @@ it is not a record of every subsequent link author or approval.
 | OFT tracing and coverage policy pass | Declared links and obligations pass for the selected artifacts. | Whether the links are relevant and assertions adequately check the promises. |
 | Tests pass at `level: command` | The configured command returned success. | Which tests or assertions ran, unless established from additional execution evidence. |
 | Tests pass at `level: suite` | The fresh JUnit report and command satisfy the configured completion policy. | Whether each OFT-linked test ran and which requirement each executed case checks. |
+| Optional execution links report a case outcome | A JUnit case explicitly identifies an OFT test artifact in the checked snapshot. | Whether the association and assertions are adequate, every required scenario ran, or the requirement is satisfied. |
 | `tests.source_status: matched` | The recorded source-stability checks matched around execution. | Reproduction of external dependencies, environment, or network state; detecting a source change restored before the final check. |
 | Check status `passed` / exit 0 | Automated checks passed without specification/test changes triggering this review gate. | Caller-required review, approval, and overall requirement satisfaction. |
 | Check status `review_required` / exit 4 | Automated checks passed with review pending. In recovery, the entire proposal remains pending. | Acceptance of the changed or recovered promises. |
 
-The current checker retains JUnit reports but has no explicit mapping from
-executed test cases to OFT item IDs. The default policy also permits skipped
-tests. Do not turn suite success into an individual requirement's "verified"
-status without the additional connection and assessment. Command-only results
-contain no report-based test counts.
+The checker retains JUnit reports. The optional `tests.execution_links` profile
+associates reported cases with exact
+OFT test-artifact IDs; without it, individual execution remains unestablished.
+The default policy also permits skipped tests. Do not turn suite success or a
+linked passing case into an individual requirement's "verified" status without
+assessing the assertions and required scenarios. Command-only results contain
+no report-based test counts.
 
 Evidence statements are unsigned. Digests bind recorded contents but do not
 establish producer identity; attribution depends on the caller's trusted
