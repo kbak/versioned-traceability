@@ -2,7 +2,7 @@ import os
 import urllib.request
 from pathlib import Path
 
-from .common import CheckError, digest, run, within, xml_tree
+from .common import RECOVERY_RECORDS, CheckError, digest, run, within, xml_tree
 
 OFT_VERSION = "4.9.0"
 OFT_SHA256 = "d4ed42503ae066f51d55c3aad7c6e4b16acb80365921951ef5a065a4dc3d94f3"
@@ -93,14 +93,36 @@ def import_items(path, root):
     return items
 
 
-def trace(snap, scope, jar, java, out, label):
-    for path in scope["inputs"]:
+def artifact_inputs(root, path):
+    """Keep quoted historical annotations in recovery records out of the graph."""
+    if within(path, [RECOVERY_RECORDS]):
+        return []
+    if (
+        within(RECOVERY_RECORDS, [path])
+        and (root / path).is_dir()
+        and (root / RECOVERY_RECORDS).exists()
+    ):
+        paths = [
+            item
+            for child in sorted((root / path).iterdir())
+            for item in artifact_inputs(root, child.relative_to(root).as_posix())
+        ]
+        return [f"./{item}" for item in paths] if path == "." else paths
+    return [path]
+
+
+def export_items(snap, inputs, jar, java, out, label):
+    """Import artifacts through OFT without requiring an already complete graph."""
+    for path in inputs:
         if not any(within(entry["path"], [path]) for entry in snap.manifest):
             raise CheckError(f"{label}: input path has no source files: {path}")
     # Relative inputs keep OFT's generated annotation IDs stable across snapshots.
-    inputs = list(dict.fromkeys(scope["inputs"]))
+    inputs = list(dict.fromkeys(inputs))
     # Overlapping roots otherwise import the same requirement more than once.
     inputs = [p for p in inputs if not within(p, [q for q in inputs if p != q])]
+    inputs = [item for path in inputs for item in artifact_inputs(snap.root, path)]
+    if not inputs:
+        raise CheckError(f"{label}: select project artifacts outside {RECOVERY_RECORDS}")
     command = [java, "-jar", str(jar)]
     exported = out / f"{label}-items.xml"
     convert = run(
@@ -111,7 +133,12 @@ def trace(snap, scope, jar, java, out, label):
     # OFT may warn and skip malformed items while returning 0. Treat import diagnostics as errors.
     if (out / convert["log"]).read_text(errors="replace").strip():
         raise CheckError(f"{label}: OFT import emitted diagnostics; see {convert['log']}")
-    items = import_items(exported, snap.root)
+    return import_items(exported, snap.root), convert, inputs
+
+
+def trace(snap, scope, jar, java, out, label):
+    items, convert, inputs = export_items(snap, scope["inputs"], jar, java, out, label)
+    command = [java, "-jar", str(jar)]
     result = run(
         command + ["trace", "-c", "BLACK_AND_WHITE", *inputs], snap.root, out / f"{label}-trace.log"
     )

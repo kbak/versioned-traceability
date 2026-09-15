@@ -49,6 +49,43 @@ vt install-oft
 The OFT installer downloads and checksum-verifies the configured release.
 For an existing JAR, set `VT_OFT_JAR` or pass `--oft-jar` to `vt check`.
 
+## Recover an existing project
+
+Give your coding agent the [recovery skill](versioned_traceability/skills/recover-baseline/SKILL.md)
+and ask: **"Recover this repository's baseline and guide me through it."** The
+agent inspects the project, helps choose scope, prepares the draft and runs checks.
+It presents proposed document/annotation changes, evidence and gaps for review.
+
+For manual preparation, start with a bounded recovery:
+
+```sh
+vt recover --repo /path/to/project
+```
+
+The default requires a clean checkout at HEAD. It preserves an original snapshot
+in tool-managed Git storage and creates source/claims records under
+`.traceability/recovery/`. The author adds native OFT requirements and coverage
+comments directly to the checkout, proposes scope.json and records citations
+and open questions in the indicated claims.json. Changes are visible in Git and
+remain uncommitted. The original snapshot is retained throughout recovery.
+
+Use `--isolated` to author in a separate draft and leave the original checkout
+unchanged. The tool prepares and validates the workflow; it does not call a model.
+The OpenHands adapter provides an agent example.
+
+Then validate the proposal:
+
+```sh
+vt recover-check --repo /path/to/project
+```
+
+This checks original source citations, permits reviewed documentation restructuring
+and coverage comments, and runs OFT plus the proposed test command. Exit 4 means
+the proposal passed automation and still needs baseline review. It never
+approves intent or commits the proposal. Inspect the Git changes, provenance,
+open questions and test results before adopting the proposed scope. See the
+[recovery guide](docs/recovery.md) for the complete experiment and adoption steps.
+
 ## Check a change
 
 You work in **one checkout**. The tool reads commits from Git and makes temporary

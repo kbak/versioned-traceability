@@ -9,6 +9,10 @@ Scope schema 1 and evidence schema 2 are provisional and may change.
 | `vt install-oft` | None; optional `--destination DIRECTORY` | Downloads and checksum-verifies the configured OFT release. |
 | `vt check` | None | Traces both versions, runs candidate tests, and writes evidence. |
 | `vt verify` | `--evidence` | Matches saved evidence to the selected scope, base, and candidate. |
+| `vt recover` | None; defaults to current clean repository at HEAD | Preserves original source and prepares in-place recovery; `--isolated` creates a separate draft. No automatic extraction or tests. |
+| `vt recover-check` | None for an active in-place recovery; `--recovery` for an isolated bundle | Validates a proposed baseline; automation never grants adoption. |
+
+Recovery has its own [guide and provisional bundle schema](recovery.md).
 
 For both `check` and `verify`:
 
@@ -66,6 +70,11 @@ running a check.
 Paths are literal, repository-relative POSIX paths; `.` selects the whole
 snapshot. Path escapes and `.git` paths are rejected. Overlapping input roots
 are imported once.
+
+The `.traceability/recovery/` namespace is reserved for retained recovery records
+and excluded from OFT import, even under `inputs: ["."]`. Source citations can
+quote historical annotations; these must not count as current trace links.
+Records still participate in source identities and test snapshots.
 
 `specification_paths` and `test_paths` must lie within inputs and must not
 overlap each other. Include test helpers, fixtures, and runner configuration in

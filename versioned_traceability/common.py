@@ -7,6 +7,8 @@ import time
 import xml.etree.ElementTree as ET
 from pathlib import Path, PurePosixPath
 
+RECOVERY_RECORDS = ".traceability/recovery"
+
 
 class CheckError(Exception):
     """An input or execution error, never a successful validation."""
