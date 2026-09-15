@@ -2,6 +2,10 @@
 
 Scope schema 1 and evidence schema 2 are provisional and may change.
 
+The [semantic contract](../versioned_traceability/skills/versioned-traceability/references/semantics.md)
+defines how humans and agents interpret the artifacts and results below,
+including which conclusions the evidence supports.
+
 ## Commands
 
 | Command | Required arguments | Result |

@@ -5,6 +5,10 @@ tests. Requirements remain native OpenFastTrace Markdown. Extraction is performe
 by a human or coding agent using the packaged recovery skill; the portable tool
 does not call an LLM or claim to infer product intent automatically.
 
+Use the shared [semantic contract](../versioned_traceability/skills/versioned-traceability/references/semantics.md)
+to distinguish claim origin, authorization, and verification when reviewing a
+recovered baseline. The same reference is included in recovery instructions.
+
 ## Start with your coding agent
 
 Give the agent the [recovery skill](../versioned_traceability/skills/recover-baseline/SKILL.md)

@@ -3,6 +3,11 @@ name: versioned-traceability
 description: Draft requirements or implement and review a task with OpenFastTrace, using the supplied scope and baseline to follow linked documentation, code, tests, and evidence.
 ---
 
+Use the [semantic contract](references/semantics.md) when interpreting links,
+identity, provenance, and results. Read it from the matching tool checkout or
+package, or use the copy included in the agent context. Apply its distinctions
+in the existing task summary; it requires no separate report.
+
 For requirements or design discussions, read
 [requirements guidance](references/requirements.md) and stay within the caller's
 discussion and authorization process. The execution steps below apply after

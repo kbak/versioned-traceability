@@ -36,6 +36,11 @@ Your test command checks behavior. Review determines whether the requirements
 and assertions are adequate. Other artifact types and coverage chains are
 supported; see the [session example](examples/session) for complete files.
 
+Read the [semantic contract](versioned_traceability/skills/versioned-traceability/references/semantics.md)
+for the shared human and agent meanings of coverage, artifact identity, claim
+origin, authorization, and execution evidence. It includes an example of
+explaining what a passing check establishes and what remains unverified.
+
 ## Install
 
 Requires Python 3.11+, Git, and Java 17+ on Linux or macOS. In a Python virtual

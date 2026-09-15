@@ -1,5 +1,10 @@
 # Requirements and design
 
+Use the shared [semantic contract](semantics.md) when interpreting existing
+artifacts or proposing new ones. Keep declared coverage, claim origin, approval,
+and execution evidence distinct in discussions and handoffs. When this guidance
+is embedded in an agent context, the semantic contract is included alongside it.
+
 ## Standalone setup for implementation
 
 Discussion alone does not require installing or running tooling. For authorized

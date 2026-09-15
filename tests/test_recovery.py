@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from importlib.resources import files
 from pathlib import Path
 from unittest.mock import patch
 
@@ -151,6 +152,12 @@ class RecoveryTests(RecoveryFixture):
         self.assertFalse((self.bundle / "source/test-results.xml").exists())
         self.assertFalse((self.bundle / "draft/requirements.md").exists())
         self.assertTrue((self.bundle / "draft/.git").is_dir())
+        semantics = (
+            files("versioned_traceability")
+            .joinpath("skills/versioned-traceability/references/semantics.md")
+            .read_text(encoding="utf-8")
+        )
+        self.assertIn(semantics, (self.bundle / "instructions.md").read_text(encoding="utf-8"))
 
     def test_real_baseline_recovery_patch_and_adoption_then_normal_development(self):
         self.draft()

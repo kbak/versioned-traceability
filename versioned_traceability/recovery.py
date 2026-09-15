@@ -176,7 +176,11 @@ def prepare(repo_path, candidate_ref, inputs, out=None, *, isolated=False):
     (out / "instructions.md").write_text(
         (skill / "SKILL.md").read_text(encoding="utf-8")
         + "\n\n"
-        + (skill / "references/recovery.md").read_text(encoding="utf-8"),
+        + (skill / "references/recovery.md").read_text(encoding="utf-8")
+        + "\n\n"
+        + files("versioned_traceability")
+        .joinpath("skills/versioned-traceability/references/semantics.md")
+        .read_text(encoding="utf-8"),
         encoding="utf-8",
     )
     record = {

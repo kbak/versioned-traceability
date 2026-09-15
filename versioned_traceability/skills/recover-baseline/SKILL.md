@@ -3,6 +3,11 @@ name: recover-baseline
 description: Guide baseline recovery for an existing repository, from choosing scope and preparing a draft to recovering OpenFastTrace requirements, source/test links, and evidence for review.
 ---
 
+Use the shared [semantic contract](../versioned-traceability/references/semantics.md)
+when interpreting recovered claims, identity mappings, and check results. Read
+it from the matching tool checkout or package; recovery bundles and injected
+agent contexts include the reference so no separate lookup is needed there.
+
 Use this for onboarding an existing project, including one with structured
 requirements that need reconciliation. A request such as "Recover this repository's baseline" is enough
 to start, including when the caller supplies only this skill's GitHub link.
