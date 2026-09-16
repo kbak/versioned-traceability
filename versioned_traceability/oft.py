@@ -1,5 +1,8 @@
 import os
+import re
+import tempfile
 import urllib.request
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from .common import RECOVERY_RECORDS, CheckError, digest, run, within, xml_tree
@@ -7,6 +10,48 @@ from .common import RECOVERY_RECORDS, CheckError, digest, run, within, xml_tree
 OFT_VERSION = "4.9.0"
 OFT_SHA256 = "d4ed42503ae066f51d55c3aad7c6e4b16acb80365921951ef5a065a4dc3d94f3"
 OFT_URL = f"https://github.com/itsallcode/openfasttrace/releases/download/{OFT_VERSION}/openfasttrace-{OFT_VERSION}.jar"
+
+# OFT 4.9.0's tag importer accepts ts/js but omits their JSX variants.
+# Reuse that importer on byte-identical temporary aliases, then restore origins.
+TAG_ALIASES = {".tsx": ".ts", ".jsx": ".js"}
+
+
+def annotation_diagnostics(snap, inputs, items):
+    """Detect ignored standalone short tags, not program-language semantics."""
+    imported = {(i["path"], i["line"], i["type"]) for i in items}
+    pattern = re.compile(
+        r"\s*(?:#|//|--|<!--)\s*\[([A-Za-z]+)->"
+        r"[A-Za-z]+~[A-Za-z0-9][A-Za-z0-9_.-]*~[0-9]+\]\s*(?:-->)?\s*"
+    )
+    missing = []
+    for entry in snap.manifest:
+        name = entry["path"]
+        if not within(name, inputs) or within(name, [RECOVERY_RECORDS]):
+            continue
+        markdown = Path(name).suffix.lower() in {".md", ".markdown"}
+        fence = None
+        for line, text in enumerate(
+            (snap.root / name).read_text(encoding="utf-8", errors="replace").splitlines(), 1
+        ):
+            if markdown:
+                marker = re.fullmatch(r" {0,3}(`{3,}|~{3,})(.*)", text)
+                if fence:
+                    # A shorter or different fence inside an example does not close it.
+                    if (
+                        marker
+                        and marker[1][0] == fence[0]
+                        and len(marker[1]) >= len(fence)
+                        and not marker[2].strip()
+                    ):
+                        fence = None
+                    continue
+                if marker and (marker[1][0] == "~" or "`" not in marker[2]):
+                    fence = marker[1]
+                    continue
+            match = pattern.fullmatch(text)
+            if match and (name, line, match[1]) not in imported:
+                missing.append(f"{name}:{line}")
+    return missing
 
 
 def default_jar():
@@ -121,6 +166,7 @@ def export_items(snap, inputs, jar, java, out, label):
     # Overlapping roots otherwise import the same requirement more than once.
     inputs = [p for p in inputs if not within(p, [q for q in inputs if p != q])]
     inputs = [item for path in inputs for item in artifact_inputs(snap.root, path)]
+    selected_inputs = [Path(path).as_posix() for path in inputs]
     if not inputs:
         raise CheckError(f"{label}: select project artifacts outside {RECOVERY_RECORDS}")
     command = [java, "-jar", str(jar)]
@@ -133,14 +179,62 @@ def export_items(snap, inputs, jar, java, out, label):
     # OFT may warn and skip malformed items while returning 0. Treat import diagnostics as errors.
     if (out / convert["log"]).read_text(errors="replace").strip():
         raise CheckError(f"{label}: OFT import emitted diagnostics; see {convert['log']}")
-    return import_items(exported, snap.root), convert, inputs
+    aliases = [
+        e["path"]
+        for e in snap.manifest
+        if Path(e["path"]).suffix in TAG_ALIASES
+        and within(e["path"], selected_inputs)
+        and not within(e["path"], [RECOVERY_RECORDS])
+    ]
+    if aliases:
+        tree = xml_tree(exported)
+        with tempfile.TemporaryDirectory(prefix="vt-oft-tags-") as temporary:
+            root = Path(temporary)
+            originals = {}
+            for name in aliases:
+                alias = name + TAG_ALIASES[Path(name).suffix]
+                target = root / alias
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((snap.root / name).read_bytes())
+                originals[alias] = name
+            extra = out / f"{label}-tags.xml"
+            imported = run(
+                command + ["convert", "-f", str(extra), "."],
+                root,
+                out / f"{label}-tags-import.log",
+            )
+            if imported["status"] != "passed" or (out / imported["log"]).read_text().strip():
+                raise CheckError(f"{label}: OFT tag import failed; see {imported['log']}")
+            for group in xml_tree(extra):
+                for item in group.findall("specobject"):
+                    source = item.find("sourcefile")
+                    path = Path(source.text)
+                    key = (
+                        path.relative_to(root).as_posix() if path.is_absolute() else path.as_posix()
+                    )
+                    source.text = originals[key]
+                tree.append(group)
+            extra.unlink()
+            ET.ElementTree(tree).write(exported, encoding="utf-8", xml_declaration=True)
+            convert["additional_import"] = imported
+    items = import_items(exported, snap.root)
+    missing = annotation_diagnostics(snap, selected_inputs, items)
+    if missing:
+        raise CheckError(
+            f"{label}: OFT ignored standalone coverage comments at "
+            + ", ".join(missing)
+            + ". Check the file format and annotation syntax before running tests."
+        )
+    return items, convert, inputs
 
 
 def trace(snap, scope, jar, java, out, label):
     items, convert, inputs = export_items(snap, scope["inputs"], jar, java, out, label)
     command = [java, "-jar", str(jar)]
     result = run(
-        command + ["trace", "-c", "BLACK_AND_WHITE", *inputs], snap.root, out / f"{label}-trace.log"
+        command + ["trace", "-c", "BLACK_AND_WHITE", str(out / f"{label}-items.xml")],
+        snap.root,
+        out / f"{label}-trace.log",
     )
     if result["status"] == "error" or result["exit_code"] not in (0, 1):
         raise CheckError(f"{label}: OFT could not execute tracing; see {result['log']}")

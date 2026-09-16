@@ -1,17 +1,18 @@
 import platform
 import tempfile
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 
 from . import __version__
-from .common import CheckError, canonical, digest, read_json, within, write_json
+from .common import CheckError, canonical, digest, read_json, within, write_json, xml_tree
 from .config import load_baseline_scope, load_scope
 from .evidence import check_artifacts, read_statement, statement, test_statement
 from .execution import collect_execution_links, retained_execution_links
 from .oft import OFT_SHA256, OFT_VERSION, policy_diagnostics, trace, validate_jar
 from .review import changes, review_diff, review_record, revision_diagnostics
 from .snapshot import changed_source, repository, resolve_commit, snapshot
-from .testing import counts_pass, execute_tests, junit_counts
+from .testing import counts_pass, execute_tests, junit_counts, merge_reports
 
 
 def source_digest():
@@ -22,7 +23,9 @@ def source_digest():
     )
 
 
-def check(repo_path, scope_path, base_ref, candidate_ref, out, jar, java="java"):
+def check(
+    repo_path, scope_path, base_ref, candidate_ref, out, jar, java="java", *, preflight=False
+):
     out = out.resolve()
     if out.is_relative_to(repo_path.resolve()):
         raise CheckError("Evidence output must be outside the checked repository")
@@ -115,6 +118,8 @@ def check(repo_path, scope_path, base_ref, candidate_ref, out, jar, java="java")
                 if not scope.get("allow_empty", False):
                     problems.append("Candidate has no selected requirements")
                 evidence["status"] = "rejected" if problems else "empty"
+            elif preflight:
+                evidence["status"] = "rejected" if problems else "incomplete"
             else:
                 # Run tests even when tracing/policy fails, to provide useful repair evidence.
                 evidence["tests"] = {
@@ -218,6 +223,11 @@ def verify(
     )
     if scope["tests"].get("format", "junit") == "junit":
         required.add("tests.xml")
+    reports = [
+        {"source": name, "artifact": f"tests-{index}.xml"}
+        for index, name in enumerate(scope["tests"].get("reports", []), 1)
+    ]
+    required.update(r["artifact"] for r in reports)
     artifacts = check_artifacts(evidence, directory, required)
     test_format = scope["tests"].get("format", "junit")
     if (
@@ -226,6 +236,12 @@ def verify(
     ):
         raise CheckError("Test execution differs from configured command/format")
     if test_format == "junit":
+        if reports:
+            if evidence["tests"].get("reports") != reports:
+                raise CheckError("Retained JUnit reports differ from configured paths")
+            merged = merge_reports((r["source"], directory / r["artifact"]) for r in reports)
+            if ET.tostring(merged) != ET.tostring(xml_tree(directory / "tests.xml")):
+                raise CheckError("Combined JUnit report differs from retained individual reports")
         counts = junit_counts(directory / "tests.xml")
         if counts != evidence["tests"].get("counts") or not counts_pass(counts, scope):
             raise CheckError("Retained test report does not support passing evidence")

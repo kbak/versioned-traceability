@@ -1,5 +1,6 @@
 import os
 import shutil
+import xml.etree.ElementTree as ET
 
 from junitparser import Attr, JUnitXml, TestCase
 
@@ -74,14 +75,37 @@ def counts_pass(counts, scope):
     )
 
 
+def merge_reports(reports):
+    """Preserve report-level outcomes and namespace suites by their source path."""
+    merged = ET.Element("testsuites")
+    for name, report in reports:
+        junit_counts(report)
+        root = xml_tree(report)
+        group = ET.SubElement(merged, "testsuite", name=name)
+        if root.tag == "testsuites":
+            group.attrib.update(root.attrib)
+            group.set("name", name)
+            group.extend(root)
+        else:
+            group.append(root)
+    return merged
+
+
 def execute_tests(snap, scope, out):
     config = scope["tests"]
-    report = snap.root / config["report"] if config.get("format", "junit") == "junit" else None
-    if report and report.exists():
-        raise CheckError(
-            "Configured JUnit report already exists in candidate; require a fresh generated report"
-        )
-    if report:
+    names = (
+        config.get("reports", [config.get("report")])
+        if config.get("format", "junit") == "junit"
+        else []
+    )
+    reports = [snap.root / name for name in names]
+    for report in reports:
+        if report.exists() or report.is_symlink():
+            raise CheckError(
+                "Configured JUnit report already exists in candidate; require a fresh generated report"
+            )
+        if not report.resolve().is_relative_to(snap.root):
+            raise CheckError("JUnit report must stay inside the candidate")
         report.parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
     env["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -89,21 +113,30 @@ def execute_tests(snap, scope, out):
     env["PROJECT_DIR"] = str(snap.root)
     result = run(config["command"], snap.root, out / "tests.log", config["timeout_seconds"], env)
     result["format"] = config.get("format", "junit")
-    result["level"] = "suite" if report else "command"
-    if report is None:
-        return result
-    if (
-        not report.is_file()
-        or report.is_symlink()
-        or not report.resolve().is_relative_to(snap.root)
-    ):
-        result["status"] = "error"
-        result["error"] = "Test command did not produce a fresh regular JUnit report"
+    result["level"] = "suite" if reports else "command"
+    if not reports:
         return result
     target = out / "tests.xml"
-    shutil.copyfile(report, target)
-    result["report"] = target.name
     try:
+        retained = []
+        for index, (name, report) in enumerate(zip(names, reports), 1):
+            if (
+                not report.is_file()
+                or report.is_symlink()
+                or not report.resolve().is_relative_to(snap.root)
+            ):
+                raise CheckError(
+                    f"Test command did not produce a fresh regular JUnit report: {name}"
+                )
+            copy = out / f"tests-{index}.xml" if "reports" in config else target
+            shutil.copyfile(report, copy)
+            retained.append({"source": name, "artifact": copy.name})
+            junit_counts(copy)  # Preserve per-report completeness checks before combining.
+        if "reports" in config:
+            result["reports"] = retained
+            merged = merge_reports((r["source"], out / r["artifact"]) for r in retained)
+            ET.ElementTree(merged).write(target, encoding="utf-8", xml_declaration=True)
+        result["report"] = target.name
         counts = junit_counts(target)
         result["counts"] = counts
         if not counts_pass(counts, scope):

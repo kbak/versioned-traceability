@@ -20,6 +20,13 @@ local changes. It handles prerequisites, bundle preparation, drafting and checks
 You do not need to supply commands, output paths, or a scope.json yourself.
 Existing caller decisions are reused. The commands below also support manual use.
 
+The default is one focused session: extract the main promises, make one short
+omissions pass through relevant regression tests and entry points, then hand off.
+A small Markdown table identifies recovered capabilities, deferred work and scope
+boundaries. There is no per-function catalog or completeness quota. Give the agent
+a time budget if useful; it should stop with a partial proposal when decisions,
+new tests or lengthy setup prevent further progress.
+
 A GitHub link to the skill is enough to start when the agent has shell access to
 the target project and network access for missing downloads. The skill directs it
 to fetch the tool repository/ref from that link, read the matching supporting
@@ -42,7 +49,7 @@ remain available to the agent.
 | Implementation files | Coverage comments are added or retargeted to requirements the existing code supports. Runtime logic is preserved. |
 | Test files | Coverage comments identify which requirements existing assertions check. Assertions are preserved; missing tests are recorded as gaps. |
 | Scope configuration | Paths, coverage expectations and the existing test command for normal validation. |
-| Evidence and review materials | Original citations, documented/inferred classifications, explanations of document changes and original ID mappings, unresolved questions, OFT/test results and a patch to inspect. |
+| Evidence and review materials | Original citations, documented/inferred classifications, explanations of document changes and original ID mappings, unresolved questions, OFT/test results, a patch, and generated recovery-review.md. |
 
 The edits remain uncommitted and pending review. After acceptance, commit the
 reviewed proposal as described below. Bug fixes and new tests are
@@ -107,8 +114,22 @@ changes. Temporary drafts are fine; put the proposed edits into the recorded
 workspace before checking. Then run:
 
 ```sh
+vt recover-check --preflight
 vt recover-check
 ```
+
+Preflight checks the proposal and trace graph without executing tests. Use it to
+catch citation, annotation/import and editing mistakes before costly setup or
+suites. Exit 5 means tests remain unrun, not passing evidence. The full check runs
+the configured tests; rerun it only when relevant edits or resolved blockers
+justify the cost.
+
+Start with the generated `recovery-review.md`. It separates proposal checks
+(source preservation, citations and original-ID accounting) from graph/test
+results, and links the detailed artifacts. A structurally incomplete proposal can
+still have valid provenance and be useful for review. Acceptance does not waive
+the ordinary development gate. Any policy for accepted verification debt requires
+an explicit caller decision; no implicit waivers are introduced here.
 
 The active recovery is discovered from Git metadata, including in linked Git
 worktrees. Snapshots and raw logs are kept under the worktree's Git directory in
@@ -122,6 +143,10 @@ before executing a draft from an untrusted source. --scope can supply an externa
 proposal when existing scope.json must remain unchanged. --out can select new
 storage outside the checkout, or within its tool-managed Git recovery storage.
 Check output must also remain outside the source bundle itself.
+Both modes default to Git storage; isolated check output is retained beside its
+bundle. Explicit paths under system temporary storage produce a retention warning.
+Git metadata is local: preserve the full bundle and results in the caller's
+artifact storage for another machine or a PR review.
 
 Changes to the starting commit/branch, original snapshot, or durable source
 record prevent a successful check. Concurrent candidate changes invalidate the
@@ -132,6 +157,7 @@ switches branches, commits, or automatically rolls back a rejected proposal.
 | --- | --- |
 | 0 from recover | Preparation completed; no extraction or verification is claimed. |
 | 4 from recover-check | OFT, tests, editing boundaries and source citations passed; baseline review remains required. |
+| 5 from recover-check --preflight | Proposal/trace checks passed; tests were not run. This is incomplete validation. |
 | 1, 2, 3 from recover-check | Rejected, errored or empty proposal. Read recovery-result.json and retained diagnostics. |
 
 Review project changes together with the durable source/claims records. The

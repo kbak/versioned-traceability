@@ -17,6 +17,10 @@ including which conclusions the evidence supports.
 | `vt recover` | None; defaults to current clean repository at HEAD | Preserves original source and prepares in-place recovery; `--isolated` creates a separate draft. No automatic extraction or tests. |
 | `vt recover-check` | None for an active in-place recovery; `--recovery` for an isolated bundle | Validates a proposed baseline; automation never grants adoption. |
 
+`recover-check --preflight` validates edits, provenance and the OFT graph without
+running tests. An otherwise clean result is `incomplete` (exit 5), and `verify`
+rejects it even with `--allow-pending-review`.
+
 Recovery has its own [guide and provisional bundle schema](recovery.md).
 
 ### Explain saved evidence
@@ -114,6 +118,13 @@ Paths are literal, repository-relative POSIX paths; `.` selects the whole
 snapshot. Path escapes and `.git` paths are rejected. Overlapping input roots
 are imported once.
 
+JSX/TSX files use OFT 4.9.0's existing JS/TS tag importer through temporary,
+byte-identical aliases; retained exports restore original paths and line numbers.
+Graph validation consumes the exported OFT graph. Standalone short coverage
+comments that were not imported produce a location-specific error before tests,
+including on unsupported file extensions. This is an import diagnostic, not a
+language parser or an assertion-adequacy check.
+
 The `.traceability/recovery/` namespace is reserved for retained recovery records
 and excluded from OFT import, even under `inputs: ["."]`. Source citations can
 quote historical annotations; these must not count as current trace links.
@@ -189,8 +200,28 @@ Use an isolated worker when commands need restricted access to the host.
 
 | Format | Configuration | Passing result |
 | --- | --- | --- |
-| `junit` (default) | Set `tests.report` to a relative file path. | Exit 0, a fresh complete report, at least one passing case, and no failures or errors. |
-| `command` | Omit `tests.report`. | Exit 0 from the configured command. No case counts or skip results are recorded. |
+| `junit` (default) | Set `tests.report`, or `tests.reports` for multiple relative file paths. | Exit 0, fresh complete reports, at least one passing case, and no failures or errors. |
+| `command` | Omit `tests.report` and `tests.reports`. | Exit 0 from the configured command. No case counts or skip results are recorded. |
+
+For a project with several runners, use one existing aggregate command or an
+explicit shell command that invokes them and propagates failures. For example:
+
+```json
+{
+  "format": "junit",
+  "command": ["bash", "-c", "python -m pytest --junitxml=backend-results.xml && npm --prefix frontend test -- --run --reporter=junit --outputFile=results.xml"],
+  "reports": ["backend-results.xml", "frontend/results.xml"],
+  "timeout_seconds": 900
+}
+```
+
+Adapt runner flags to the project. All listed reports must be fresh, regular files
+in the captured candidate; duplicates, missing reports and stale reports fail.
+Originals are retained as `tests-1.xml`, `tests-2.xml`, etc., and merged into
+`tests.xml`. Report paths provide enclosing suite names to distinguish identical
+case names across runners. Existing testcase properties, including optional OFT
+execution links, are retained. This adds no task runner dependency. A suite run
+separately outside this command is not included in the check evidence.
 
 The JUnit adapter accepts unnamespaced XML and rejects DTDs/entities, malformed
 or inconsistent reports, and reports already present in the candidate. Entirely

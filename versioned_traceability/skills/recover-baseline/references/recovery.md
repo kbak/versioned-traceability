@@ -70,6 +70,36 @@ working tree, or in its tool-managed Git recovery storage. Omit --input for an
 inventory of the whole snapshot, or select existing literal paths after
 inspection. The proposed scope.json can still select a smaller trace/test scope.
 Each check keeps a fresh result; preserve the reported evidence location.
+Both recovery modes default to durable Git storage. Explicit temporary paths
+remain supported, but check summaries warn about their retention. Git metadata
+does not travel with a clone or push: preserve the full original bundle and
+result directory using the caller's existing artifact storage when handing off.
+
+## Bounded discovery
+
+Use one extraction pass and one short omissions pass, within the caller's budget.
+The default is a focused first session, not an exhaustive audit. Keep a small table
+in the recovered Markdown, for example:
+
+| Capability | Recovery | Remaining work |
+| --- | --- | --- |
+| Session expiry | Recovered: `req~session-expiration~1` | Boundary assertion linked; device behavior unexamined. |
+| Concurrent renewal | Deferred | Existing regression identified; reconcile with the guide next. |
+| Billing | Outside scope | Separate subsystem. |
+
+Record uncovered behaviors from the second pass as deferred work when extracting
+them would exceed the budget. Do not create a row per function, a minimum number
+of requirements, or a new confidence-scoring system. Follow public entry points
+and relevant helpers enough to avoid hiding dependencies outside the trace scope.
+Document the boundary when that investigation must stop.
+
+Prefer separate IDs for obligations with different evidence or independent failure
+modes. For example, successful sign-in and an OTP attempt limit can share a section
+while having separate IDs. Several assertions may collectively support one ID;
+there is no requirement for a single test to prove everything. Mark partial support
+and outstanding clauses explicitly. Manual/provider obligations may use different
+OFT artifact types and Needs; choose these during scope review without weakening
+existing obligations. An unperformed manual check remains an evidence gap.
 
 ## Bundle and proposed edits
 
@@ -135,7 +165,7 @@ Needs: impl, utest
 
 Add `# [impl->req~session-expiration~1]` and
 `# [utest->req~session-expiration~1]` as separate lines beside Python behavior
-and assertions. Use `//` for JS/TS (including JavaScript `.mjs` and `.cjs` modules),
+and assertions. Use `//` for JS/TS (including `.mjs`, `.cjs`, `.jsx`, and `.tsx`),
 Java/C/C++/Go and `--` for SQL. Outside editable specification documents, only
 simple short coverage-tag comments may change; ordinary OFT checking supports
 the wider OFT language. Review that comments are interpreted correctly in
@@ -172,6 +202,14 @@ For JUnit evidence use format junit, configure the existing runner to produce a
 fresh report, and set tests.report to its relative path. Include runner/config
 files in the reviewed scope where they affect verification. Choose coverage
 types based on actual evidence, not this illustrative unit-test default.
+
+For several existing runners, keep one aggregate command and use `tests.reports`
+instead of `tests.report`, for example `["backend-results.xml", "frontend/results.xml"]`.
+Every listed JUnit report must be freshly produced in the captured candidate;
+the checker retains the originals and combines them into tests.xml. Include all
+relevant runners in the command, with a nonzero exit when any fails. A separate
+ad-hoc test run is not part of this evidence. Record unavailable suites as gaps;
+do not silently omit them or claim that suite success establishes each linked case.
 
 claims.json schema 1:
 
@@ -262,14 +300,28 @@ even if the proposed graph is valid. Report this limitation without changing the
 retained original or silently excluding the duplicates. Arbitrary non-OFT identifiers and completeness
 of unstructured prose require manual accounting and review.
 
-Run `vt recover-check --recovery /bundle --out /new/result`. It executes the
+Run `vt recover-check --recovery /bundle --preflight` for inexpensive edit,
+citation and trace feedback before setting up/running costly suites. Clean
+preflight exits 5 (`incomplete`), records tests as not_run, and cannot be verified
+as passing evidence. Trace/citation/edit failures retain their usual failure codes.
+
+Then run `vt recover-check --recovery /bundle`. It executes the
 proposed test command with the caller's permissions in a disposable snapshot.
 The result contains the source and candidate identities, claims/provenance,
-scope, proposal.patch, documentation-review.json and check/ evidence from the existing
+scope, proposal.patch, documentation-review.json, recovery-review.md and check/ evidence from the existing
 OFT runner. No approval is granted; successful recovery exits 4 (review required).
 Missing tools, invalid citations or unsupported edits prevent successful recovery.
 In-place changes are visible in the checkout. Isolated results also contain
 proposed/, a full copy of the checked draft.
+
+Read recovery-review.md first. `proposal_checks: passed` means source preservation,
+citations and original-ID accounting completed; it does not mean tracing/tests
+passed, semantic fidelity, completeness or approval. Missing trace/test evidence
+can leave a useful partial proposal with status rejected. Stop recovery with its
+reviewable gaps; follow-up development supplies missing behavior/tests. Existing
+strict checks are unchanged: accepting a partial proposal does not bypass them.
+Any policy for carrying accepted debt into development belongs to the caller and
+must be explicitly designed/reviewed; this tool grants no implicit waivers.
 
 The validation Git commit is disposable, so its check/evidence.json cannot be
 used to claim an adopted commit was approved. After authorized review, apply the

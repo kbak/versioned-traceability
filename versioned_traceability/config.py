@@ -82,7 +82,8 @@ def validate_scope(scope):
     tests = scope["tests"]
     if (
         not isinstance(tests, dict)
-        or set(tests) - {"command", "report", "timeout_seconds", "format", "execution_links"}
+        or set(tests)
+        - {"command", "report", "reports", "timeout_seconds", "format", "execution_links"}
         or {"command", "timeout_seconds"} - set(tests)
         or tests.get("format", "junit") not in {"junit", "command"}
     ):
@@ -95,10 +96,18 @@ def validate_scope(scope):
     ):
         raise CheckError("tests.command must be a nonempty argv array (no implicit shell)")
     if tests.get("format", "junit") == "junit":
-        relative_path(tests.get("report"))
-        if tests["report"] == ".":
-            raise CheckError("tests.report must name a file")
-    elif "report" in tests:
+        if ("report" in tests) == ("reports" in tests):
+            raise CheckError("JUnit tests require either report or reports")
+        reports = tests.get("reports", [tests.get("report")])
+        if not isinstance(reports, list) or not reports:
+            raise CheckError("tests.reports must be a nonempty list")
+        for report in reports:
+            relative_path(report)
+            if report == ".":
+                raise CheckError("JUnit report must name a file")
+        if len(set(reports)) != len(reports):
+            raise CheckError("Duplicate JUnit report paths")
+    elif "report" in tests or "reports" in tests:
         raise CheckError("command format records execution/logs and does not consume a report")
     if "execution_links" in tests:
         links = tests["execution_links"]

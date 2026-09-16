@@ -2,7 +2,14 @@
 
 from .common import CheckError, digest, relative_path
 
-EXIT_CODES = {"passed": 0, "rejected": 1, "error": 2, "empty": 3, "review_required": 4}
+EXIT_CODES = {
+    "passed": 0,
+    "rejected": 1,
+    "error": 2,
+    "empty": 3,
+    "review_required": 4,
+    "incomplete": 5,
+}
 
 STATEMENT = "https://in-toto.io/Statement/v1"
 CHECK_TYPE = "https://github.com/kbak/versioned-traceability/check/v0.2"

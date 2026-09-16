@@ -23,6 +23,7 @@ from .common import (
 )
 from .config import load_scope
 from .oft import export_items, import_items
+from .recovery_report import render_review
 from .runner import check
 from .snapshot import git, put_file, repository, resolve_commit, snapshot, worktree_entries
 
@@ -118,13 +119,9 @@ def prepare(repo_path, candidate_ref, inputs, out=None, *, isolated=False):
             )
     run_id = uuid4().hex
     if out is None:
-        out = (
-            (Path(tempfile.mkdtemp(prefix="vt-recovery-")) / "recovery")
-            if isolated
-            else recovery_storage(repo) / "runs" / run_id
-        )
+        out = recovery_storage(repo) / "runs" / run_id
     out = out.resolve()
-    if out.is_relative_to(repo) and (isolated or not out.is_relative_to(recovery_storage(repo))):
+    if out.is_relative_to(repo) and not out.is_relative_to(recovery_storage(repo)):
         raise CheckError(
             "Recovery output must be outside the source repository or in its recovery storage"
         )
@@ -630,7 +627,7 @@ def requirement_review(claims, before, after):
     return records
 
 
-def check_recovery(directory, scope_path, out, jar, java="java"):
+def check_recovery(directory, scope_path, out, jar, java="java", *, preflight=False):
     directory = directory.resolve(strict=True)
     try:
         hint = read_json(directory / "recovery.json")
@@ -646,7 +643,7 @@ def check_recovery(directory, scope_path, out, jar, java="java"):
         out = (
             recovery_storage(repository(workspace)) / "checks" / uuid4().hex
             if in_place
-            else Path(tempfile.mkdtemp(prefix="vt-recovered-")) / "result"
+            else directory.parent / f"{directory.name}-check-{uuid4().hex}"
         )
     out = out.resolve()
     if out.is_relative_to(directory):
@@ -661,6 +658,7 @@ def check_recovery(directory, scope_path, out, jar, java="java"):
         not in_place
         and "source_repo" in hint
         and out.is_relative_to(Path(hint["source_repo"]).resolve())
+        and not out.is_relative_to(recovery_storage(repository(Path(hint["source_repo"]))))
     ):
         raise CheckError("Isolated check output must be outside the original repository")
     out.mkdir(parents=True, exist_ok=False)
@@ -668,11 +666,14 @@ def check_recovery(directory, scope_path, out, jar, java="java"):
         "schema_version": 1,
         "status": "error",
         "review": "required",
+        "proposal_checks": "not_completed",
+        "preflight": preflight,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "output": str(out),
         "workspace": str(workspace),
         "mode": "in_place" if in_place else "isolated",
         "diagnostics": [],
+        "warnings": [],
         "limitations": [
             "A recovery proposal never approves inferred intent or adopts a baseline.",
             "Citations establish source locations, not semantic support or independent corroboration.",
@@ -681,6 +682,13 @@ def check_recovery(directory, scope_path, out, jar, java="java"):
             "OFT coverage and suite outcomes do not establish individual assertion adequacy.",
         ],
     }
+    checked, normalized = {}, {}
+    proposal_validated = False
+    for label, path in (("Original recovery bundle", directory), ("Check output", out)):
+        if path.is_relative_to(Path(tempfile.gettempdir()).resolve()):
+            result["warnings"].append(
+                f"{label} is in temporary storage: {path}. Retain the complete bundle before cleanup or transfer."
+            )
     try:
         record, manifest = read_bundle(directory)
         scope_path = scope_path or workspace / "scope.json"
@@ -754,7 +762,14 @@ def check_recovery(directory, scope_path, out, jar, java="java"):
                 )
                 baseline = commit(validation, "Proposed recovered baseline (review pending)")
                 checked = check(
-                    validation, out / "scope.json", baseline, "HEAD", out / "check", jar, java
+                    validation,
+                    out / "scope.json",
+                    baseline,
+                    "HEAD",
+                    out / "check",
+                    jar,
+                    java,
+                    preflight=preflight,
                 )
                 result["check_status"] = checked["status"]
                 if "candidate" in checked and checked["candidate"]["sha256"] != candidate.sha256:
@@ -799,6 +814,7 @@ def check_recovery(directory, scope_path, out, jar, java="java"):
                     )
                     result["document_change_count"] = len(documents)
                     result["original_requirement_count"] = len(requirements)
+                    proposal_validated = True
                 else:
                     raise CheckError(
                         "OFT could not import the proposed baseline; see check/evidence.json"
@@ -819,19 +835,42 @@ def check_recovery(directory, scope_path, out, jar, java="java"):
                         or head_ref(draft) != record["start_ref"]
                     )
                 ):
+                    proposal_validated = False
                     result["status"] = "rejected"
                     result["diagnostics"].append(
                         "Draft changed during validation (contents, starting commit or branch); rerun recovery check"
                     )
             if read_json(claims_file) != claims or load_scope(scope_path) != scope:
+                proposal_validated = False
                 result["status"] = "rejected"
                 result["diagnostics"].append("Claims or scope changed during validation; rerun")
             current_record, _ = read_bundle(directory)
             if current_record != record:
                 raise CheckError("Recovery identity changed during validation; rerun")
+            if proposal_validated:
+                result["proposal_checks"] = "passed"
     except (CheckError, OSError, ValueError, KeyError, TypeError) as exc:
         result["status"] = "error"
         result["diagnostics"].append(str(exc))
+    result["review_artifacts"] = [
+        name
+        for name in (
+            "proposal.patch",
+            "scope.json",
+            "claims.json",
+            "provenance.json",
+            "documentation-review.json",
+            "check/evidence.json",
+            "check/candidate-trace.log",
+            "check/tests.log",
+            "check/tests.xml",
+        )
+        if (out / name).is_file()
+    ]
+    result["summary"] = "recovery-review.md"
+    (out / result["summary"]).write_text(
+        render_review(result, checked, normalized), encoding="utf-8"
+    )
     result["artifacts"] = {
         p.relative_to(out).as_posix(): digest(p.read_bytes())
         for p in sorted(out.rglob("*"))

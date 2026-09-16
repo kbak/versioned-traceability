@@ -79,6 +79,13 @@ comments directly to the checkout, proposes scope.json and records citations
 and open questions in the indicated claims.json. Changes are visible in Git and
 remain uncommitted. The original snapshot is retained throughout recovery.
 
+The skill aims for a bounded first session: one extraction pass, one short
+omissions pass, and a capability table with deferred work. Run
+`vt recover-check --preflight` for feedback without executing tests; exit 5 means
+tests remain unrun. Each check writes `recovery-review.md` with the current gaps,
+diagnostics and artifact links. Both recovery modes retain their defaults under
+Git metadata; preserve those local bundles when sharing the review.
+
 Use `--isolated` to author in a separate draft and leave the original checkout
 unchanged. The tool prepares and validates the workflow; it does not call a model.
 The OpenHands adapter provides an agent example.

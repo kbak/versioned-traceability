@@ -60,6 +60,17 @@ an automated caller that already provided them needs no intake conversation.
 The caller decides which recovered promises to adopt. Recovery does not grant
 approval or replace an established baseline.
 
+Aim for a useful first review in one focused session, roughly 30–60 minutes when
+setup and tests permit, unless the caller requests more depth. Recover the main
+promises, then make one short omissions pass through relevant regression tests
+and public entry points. Honor a supplied time limit. Stop with a cited partial
+proposal when further progress needs product decisions, new tests, lengthy setup
+or broader investigation. Do not expand scope or keep iterating toward perfect
+coverage. Rerun costly checks only after a relevant change or resolved blocker.
+If setup or tests would overrun the session, retain the draft and mark those
+checks unrun with a concrete resumption step instead of repeatedly repairing the
+environment. The caller can request a deeper pass later.
+
 The original snapshot is required in both modes. Preserve it throughout recovery,
 including when using temporary files for drafting. In-place mode writes proposed
 changes to the recorded checkout for normal Git review; isolated mode writes to
@@ -73,6 +84,21 @@ Add design items when they explain decisions; use existing OFT conventions and
 avoid redundant layers. Reuse existing IDs for surviving obligations; start new
 ones at revision 1. Preserve useful existing structure. Restructure where it
 clarifies scattered evidence, not merely to shorten already clear requirements.
+
+Keep a small capability table in the proposed Markdown: recovered (IDs), deferred
+(reason/next step), or outside scope. Group by meaningful behavior, not every file
+or function; no new schema or exhaustive catalog is needed. In the omissions pass,
+look especially for boundary/negative cases, retry and lifecycle behavior, and
+contradictions with the first pass. Relevant regression assertions can reveal
+promises missing from the docs. Record remaining uncertainty instead of estimating
+a percentage recovered.
+
+Split clauses when their origin, implementation or verification differs materially.
+A linked happy-path test must not hide an untested limit or another channel's
+behavior. Keep partial evidence in claim notes and unresolved obligations in
+open_issues. Choose verification types appropriate to the promise: provider
+operations and device setup may need manual evidence rather than unit tests.
+Never invent a manual-verification marker without the corresponding artifact.
 
 Read the bundle's original `source/` files for citations. Within selected Markdown
 specification paths, add native OFT IDs and `Needs:` metadata, reorganize or rewrite
@@ -107,8 +133,19 @@ Avoid numerical confidence claims without a calibrated basis.
 Prepare the proposed scope.json using the existing Versioned Traceability
 scope format, including the project's real test command. The evidence inventory
 is broader context; the scope selects the actual bounded trace and test policy.
+Follow relevant implementation dependencies far enough to include the mechanisms
+behind recovered promises, or record the boundary; avoid selecting only files
+already annotated. Include the runners needed for linked tests across stacks.
+Use existing aggregate commands or tests.reports for multiple JUnit outputs;
+record suites left unexecuted. Recovery does not add new test runners or tests.
 For missing behavior/tests, preserve the gap and report it. Bug repairs and new
 characterization tests are separate tasks, not recovery shortcuts.
+
+Use `vt recover-check --preflight` after drafting to check edits, citations and
+OFT import/links before expensive tests. Exit 5 means preflight was otherwise clean
+but tests were not run; it is not passing validation. Fix inexpensive authoring
+mistakes; retain genuine evidence gaps. Prefer the default durable storage; use
+temporary locations for tooling/drafting, not the sole retained snapshot/results.
 
 Run `vt recover-check` in an active in-place workspace, or supply `--recovery`
 with the bundle path. The tool chooses a fresh result directory each time.
@@ -128,9 +165,14 @@ documentation-review.json alongside the diff. Accounting for existing IDs does
 not prove that every obligation in unstructured prose was recovered; state the
 remaining completeness uncertainty instead of claiming exhaustive extraction.
 Point to working-tree changes in in-place mode and the proposed patch in isolated
-mode. Link requirements, provenance and validation results so the
+mode. Start with the generated recovery-review.md, then link the capability table,
+requirements, provenance and validation results so the
 caller can inspect them without navigating JSON unaided. A partial recovery
 should still explain what was found and what prevents a validated baseline.
+The report distinguishes proposal checks from tracing/tests. A useful partial
+proposal can finish this recovery task while still failing the development gate;
+review acceptance does not waive missing evidence. Retain the complete bundle
+and result directories with the review handoff; Git metadata is local, not pushed.
 
 Leave adoption to the caller's existing review workflow. In-place edits already
 exist in the checkout; do not apply proposal.patch over them. For an isolated

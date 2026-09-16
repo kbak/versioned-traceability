@@ -93,7 +93,7 @@ def parser():
     recovery.add_argument(
         "--out",
         type=Path,
-        help="New storage directory (default: Git recovery storage; temporary storage with --isolated)",
+        help="New storage directory (default: Git recovery storage in either mode)",
     )
     recovering = commands.add_parser(
         "recover-check", help="Validate a proposed baseline; always requires review"
@@ -117,6 +117,11 @@ def parser():
     )
     recovering.add_argument("--oft-jar", type=Path, default=default_jar())
     recovering.add_argument("--java", default="java")
+    recovering.add_argument(
+        "--preflight",
+        action="store_true",
+        help="Check edits, provenance and tracing without running tests (exit 5 if otherwise clean)",
+    )
     checking = commands.add_parser("check", help="Check changes against a Git baseline")
     verifying = commands.add_parser(
         "verify", help="Match saved passing evidence to current contents"
@@ -172,9 +177,19 @@ def main(argv=None):
                     os.fsdecode(git(Path.cwd(), "rev-parse", "--show-toplevel")).strip()
                 )
                 args.recovery = active_recovery(repo)
-            result = check_recovery(args.recovery, args.scope, args.out, args.oft_jar, args.java)
+            result = check_recovery(
+                args.recovery,
+                args.scope,
+                args.out,
+                args.oft_jar,
+                args.java,
+                preflight=args.preflight,
+            )
             print(f"{result['status']}: {Path(result['output']) / 'recovery-result.json'}")
+            print(f"Review summary: {Path(result['output']) / result['summary']}")
             for message in result["diagnostics"]:
+                print(f"- {message}")
+            for message in result["warnings"]:
                 print(f"- {message}")
             if result["status"] == "review_required":
                 print(
