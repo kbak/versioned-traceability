@@ -163,11 +163,18 @@ Use native OFT Markdown, for example:
 ```markdown
 ### Session expiration
 `req~session-expiration~1`
+Status: draft
 
 Sessions expire after 30 minutes of inactivity.
 
 Needs: impl, utest
 ```
+
+Use explicit draft status for new or substantively rewritten recovered items;
+omitting it imports as approved. Preserve unchanged existing item statuses.
+Place Status immediately after the ID, before the description. Keep draft items
+in trace validation with their full Needs obligations; approval follows the
+caller's review, never a successful check or a change of origin classification.
 
 Add `# [impl->req~session-expiration~1]` and
 `# [utest->req~session-expiration~1]` as separate lines beside Python behavior
@@ -254,7 +261,7 @@ evidence). Do not omit contradictions to make a draft look complete. Open issues
 are preserved for review even when tracing and existing tests pass.
 
 For each substantively edited or deleted original specification document, add a
-document_changes entry. Metadata-only additions (IDs, Needs, blank separators)
+document_changes entry. Metadata-only additions (IDs, Needs, Status: draft, blank separators)
 and coverage-comment edits do not require an entry. New documents obtain provenance
 through their claims. Both new lists are optional in schema 1 for compatibility;
 omission does not waive the requirements for restructuring or changed original IDs.

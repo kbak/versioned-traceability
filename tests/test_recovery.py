@@ -237,7 +237,7 @@ class RecoveryTests(RecoveryFixture):
         imported = import_items(self.out / "check/candidate-items.xml", self.bundle / "draft")
         self.assertTrue(set(names).issubset({item["path"] for item in imported}), imported)
 
-    def test_existing_specification_can_receive_ids_and_needs_with_original_citations(self):
+    def test_existing_specification_can_receive_draft_metadata_with_original_citations(self):
         original = (
             "".join(
                 line
@@ -249,6 +249,12 @@ class RecoveryTests(RecoveryFixture):
         (self.repo / "requirements.md").write_text(original)
         self.commit()
         self.draft()
+        path = self.bundle / "draft/requirements.md"
+        path.write_text(
+            path.read_text().replace(
+                "`req~session-expiration~1`", "`req~session-expiration~1`\nStatus: draft"
+            )
+        )
         lines = original.splitlines()
         start = lines.index(
             "A session expires when its inactivity reaches 30 minutes. A session with less"
@@ -270,6 +276,10 @@ class RecoveryTests(RecoveryFixture):
         source = read_json(self.out / "provenance.json")["items"][0]["sources"][0]
         self.assertEqual(source["quote"], self.claims["items"][0]["sources"][0]["quote"])
         self.git("apply", "--check", str(self.out / "proposal.patch"))
+        # Approval metadata is not covered by the draft-only addition exception.
+        path.write_text(path.read_text().replace("Status: draft", "Status: approved"))
+        result = self.run_check()
+        self.assertIn("Missing document change review", " ".join(result["diagnostics"]))
 
     def test_metadata_additions_require_selected_specification_path(self):
         self.draft()

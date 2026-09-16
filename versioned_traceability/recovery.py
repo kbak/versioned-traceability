@@ -435,7 +435,8 @@ def annotation_changes_only(path, before, after, *, specification=False):
             # Metadata-only additions do not require a document rewrite record.
             # Deleting/changing these lines does require one.
             pattern += (
-                r"|`" + ITEM_ID + r"`|Needs:[ \t]+[A-Za-z]+(?:[ \t]*,[ \t]*[A-Za-z]+)*|[ \t]*"
+                r"|`" + ITEM_ID + r"`|Needs:[ \t]+[A-Za-z]+(?:[ \t]*,[ \t]*[A-Za-z]+)*"
+                r"|Status:[ \t]+draft|[ \t]*"
             )
     elif suffix in COMMENT_PREFIXES:
         pattern = re.escape(COMMENT_PREFIXES[suffix]) + r"\s*" + TAG

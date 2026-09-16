@@ -182,7 +182,7 @@ and test fixtures outside the editable specification scope.
 
 For each substantive edit or deletion, claims.json's document_changes records the
 original path, a summary, original source citations, and an author assessment of
-meaning: preserved, changed or uncertain. Adding IDs/Needs metadata or editing
+meaning: preserved, changed or uncertain. Adding IDs/Needs/Status: draft metadata or editing
 coverage comments alone does not require a document-change entry. New requirements
 still need their ordinary claim citations. The
 [authoring contract](../versioned_traceability/skills/recover-baseline/references/recovery.md)
@@ -212,6 +212,10 @@ unstructured prose and non-OFT identifiers still needs an explicit human/agent
 assessment. Scope exclusions must be reviewed too.
 
 All changes remain proposals, including deliberate changes of meaning or removal.
+New or substantively rewritten recovered items explicitly use `Status: draft`
+after their OFT ID; omitted status imports as approved. Unchanged existing items
+retain their status. Promote accepted items to `Status: approved` only through
+the caller's review and adoption process, preserving their historical origin.
 The checker never interprets OFT item status or author notes as baseline acceptance.
 
 ## Isolated drafting

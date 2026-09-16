@@ -85,6 +85,13 @@ avoid redundant layers. Reuse existing IDs for surviving obligations; start new
 ones at revision 1. Preserve useful existing structure. Restructure where it
 clarifies scattered evidence, not merely to shorten already clear requirements.
 
+Give newly recovered or substantively rewritten specification items explicit
+`Status: draft` immediately after the OFT ID, before the description. OFT otherwise
+imports omitted status as approved. This applies to documented and inferred claims;
+keep origin and disputes in their existing provenance records. Preserve the status
+of unchanged existing items. Passing checks never promote draft items, and status
+must not be changed just to remove trace defects.
+
 Keep a small capability table in the proposed Markdown: recovered (IDs), deferred
 (reason/next step), or outside scope. Group by meaningful behavior, not every file
 or function; no new schema or exhaustive catalog is needed. In the omissions pass,
@@ -202,6 +209,8 @@ draft, transfer only the reviewed changes to the matching original source.
 Retain provenance and the review decision, then validate the actual committed
 baseline before normal development begins. Committing a draft alone does not
 establish acceptance or activate a development policy.
+As part of authorized adoption, explicitly set `Status: approved` only for the
+items accepted through that review. Preserve their documented/inferred origin.
 
 This workflow is informed by OpenFastTrace's reverse-specification procedure at
 4.9.0; the source and intentional differences are documented in the reference.
