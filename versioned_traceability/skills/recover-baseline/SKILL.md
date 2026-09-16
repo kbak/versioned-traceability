@@ -93,6 +93,15 @@ contradictions with the first pass. Relevant regression assertions can reveal
 promises missing from the docs. Record remaining uncertainty instead of estimating
 a percentage recovered.
 
+Within that same short pass, try to disprove a few broad or uncertain requirements:
+what option, input, platform or interaction could make the sentence false? Use
+existing evidence first; a small temporary probe may resolve uncertainty without
+adding project tests or extending the session. For example, "dotenv values round-trip
+unchanged" may overstate evidence that escaping preserves text: subsequent
+interpolation can change the loaded value. If the original docs promise the broader
+behavior, cite the contradiction in open_issues rather than silently narrowing it.
+For an inferred claim, state only the supported conditions and retain uncertainty.
+
 Split clauses when their origin, implementation or verification differs materially.
 A linked happy-path test must not hide an untested limit or another channel's
 behavior. Keep partial evidence in claim notes and unresolved obligations in
@@ -133,6 +142,12 @@ Avoid numerical confidence claims without a calibrated basis.
 Prepare the proposed scope.json using the existing Versioned Traceability
 scope format, including the project's real test command. The evidence inventory
 is broader context; the scope selects the actual bounded trace and test policy.
+Before finalizing it, identify which source documents remain maintained descriptions
+of recovered behavior. Include those living documents (for example, the README)
+in specification_paths and inputs even without OFT IDs, so later edits receive
+specification review. Historical evidence such as old changelog entries can remain
+citations without becoming maintained specifications. Keep executable docs under
+the behavioral protections above.
 Follow relevant implementation dependencies far enough to include the mechanisms
 behind recovered promises, or record the boundary; avoid selecting only files
 already annotated. Include the runners needed for linked tests across stacks.
@@ -154,6 +169,13 @@ means automation passed but the entire proposal still needs review, including
 open issues and citation meaning. Other nonzero exits cannot establish a valid
 baseline. Repair draft mistakes within scope; report missing prerequisites and
 unresolved contradictions without removing obligations just to obtain a pass.
+
+In the final diff review, check each added or retargeted marker against its nearby
+function, branch or assertion. For example, a link for "empty values are accepted"
+beside the double-quoted-value branch does not establish empty-value handling;
+place it beside the actual empty-value path or assertion, or record missing support.
+Review the inserted comments, not the whole repository again; keep this within the
+same omissions/review pass and session budget.
 
 Present the result in plain language: the recovered capabilities and scope,
 documents added, rewritten, moved or removed, implementation/test files receiving coverage

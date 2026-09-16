@@ -26,7 +26,11 @@ def annotation_diagnostics(snap, inputs, items):
     missing = []
     for entry in snap.manifest:
         name = entry["path"]
-        if not within(name, inputs) or within(name, [RECOVERY_RECORDS]):
+        if (
+            entry.get("mode") == "120000"
+            or not within(name, inputs)
+            or within(name, [RECOVERY_RECORDS])
+        ):
             continue
         markdown = Path(name).suffix.lower() in {".md", ".markdown"}
         fence = None
@@ -138,19 +142,18 @@ def import_items(path, root):
     return items
 
 
-def artifact_inputs(root, path):
-    """Keep quoted historical annotations in recovery records out of the graph."""
-    if within(path, [RECOVERY_RECORDS]):
+def artifact_inputs(root, path, links=()):
+    """Exclude historical annotations and symlink aliases from OFT traversal."""
+    if within(path, [RECOVERY_RECORDS]) or path in links:
         return []
-    if (
-        within(RECOVERY_RECORDS, [path])
-        and (root / path).is_dir()
-        and (root / RECOVERY_RECORDS).exists()
+    if (root / path).is_dir() and (
+        (within(RECOVERY_RECORDS, [path]) and (root / RECOVERY_RECORDS).exists())
+        or any(within(link, [path]) for link in links)
     ):
         paths = [
             item
             for child in sorted((root / path).iterdir())
-            for item in artifact_inputs(root, child.relative_to(root).as_posix())
+            for item in artifact_inputs(root, child.relative_to(root).as_posix(), links)
         ]
         return [f"./{item}" for item in paths] if path == "." else paths
     return [path]
@@ -165,7 +168,13 @@ def export_items(snap, inputs, jar, java, out, label):
     inputs = list(dict.fromkeys(inputs))
     # Overlapping roots otherwise import the same requirement more than once.
     inputs = [p for p in inputs if not within(p, [q for q in inputs if p != q])]
-    inputs = [item for path in inputs for item in artifact_inputs(snap.root, path)]
+    links = [e["path"] for e in snap.manifest if e["mode"] == "120000"]
+    for path in inputs:
+        if path in links:
+            raise CheckError(f"{label}: select the actual source path instead of symlink: {path}")
+    # Do not let directory import follow aliases (duplicating IDs), dangling links,
+    # or recursive directory links. Tests still receive the original links.
+    inputs = [item for path in inputs for item in artifact_inputs(snap.root, path, links)]
     selected_inputs = [Path(path).as_posix() for path in inputs]
     if not inputs:
         raise CheckError(f"{label}: select project artifacts outside {RECOVERY_RECORDS}")
@@ -182,7 +191,8 @@ def export_items(snap, inputs, jar, java, out, label):
     aliases = [
         e["path"]
         for e in snap.manifest
-        if Path(e["path"]).suffix in TAG_ALIASES
+        if e["mode"] != "120000"
+        and Path(e["path"]).suffix in TAG_ALIASES
         and within(e["path"], selected_inputs)
         and not within(e["path"], [RECOVERY_RECORDS])
     ]

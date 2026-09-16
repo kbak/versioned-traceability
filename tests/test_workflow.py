@@ -557,9 +557,9 @@ class WorkflowTests(WorkflowFixture):
         self.configure(lambda s: s["inputs"].append("missing-directory"))
         self.assert_problem(self.run_check(), "no source files")
 
-    def test_symlinks_fail_explicitly(self):
-        (self.repo / "shortcut.py").symlink_to("session.py")
-        self.assert_problem(self.run_check(), "Symlinks")
+    def test_external_symlinks_fail_explicitly(self):
+        (self.repo / "shortcut.py").symlink_to("../outside.py")
+        self.assert_problem(self.run_check(), "Symlink target escapes")
 
     def test_evidence_detects_dependency_scope_base_and_artifact_changes(self):
         self.assertEqual(self.run_check()["status"], "passed")

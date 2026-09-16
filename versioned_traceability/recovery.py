@@ -1,9 +1,9 @@
 """Prepare and validate OFT proposals in a clean checkout or an isolated draft."""
 
 import difflib
+import os
 import re
 import shutil
-import stat
 import subprocess
 import tempfile
 from datetime import datetime, timezone
@@ -25,7 +25,16 @@ from .config import load_scope
 from .oft import export_items, import_items
 from .recovery_report import render_review
 from .runner import check
-from .snapshot import git, put_file, repository, resolve_commit, snapshot, worktree_entries
+from .snapshot import (
+    git,
+    put_file,
+    read_entry,
+    repository,
+    resolve_commit,
+    snapshot,
+    validate_symlinks,
+    worktree_entries,
+)
 
 RECOVERY_SKILL = "skills/recover-baseline"
 
@@ -146,10 +155,10 @@ def prepare(repo_path, candidate_ref, inputs, out=None, *, isolated=False):
     for entry in source.manifest:
         if not within(entry["path"], inputs):
             continue
-        content = (source.root / entry["path"]).read_bytes()
+        mode, content = read_entry(source.root, entry["path"])
         try:
             text = content.decode("utf-8")
-            is_text = "\x00" not in text
+            is_text = mode != "120000" and "\x00" not in text
         except UnicodeDecodeError:
             text, is_text = "", False
         inventory.append(
@@ -158,11 +167,12 @@ def prepare(repo_path, candidate_ref, inputs, out=None, *, isolated=False):
                 "bytes": len(content),
                 "text": is_text,
                 "lines": len(text.splitlines()) if is_text else None,
+                **({"target": os.fsdecode(content)} if mode == "120000" else {}),
             }
         )
     seed = None
     if isolated:
-        shutil.copytree(source.root, out / "draft")
+        shutil.copytree(source.root, out / "draft", symlinks=True)
         seed = initialize(
             out / "draft", "Captured source for baseline recovery (not historical intent)"
         )
@@ -296,17 +306,13 @@ def read_bundle(directory):
     names = set()
     for entry in manifest:
         name = relative_path(entry["path"])
-        path = directory / "source" / name
-        if name in names or not path.resolve().is_relative_to(directory / "source"):
+        if name in names:
             raise CheckError(f"Invalid recovery source path: {name}")
         names.add(name)
-        mode = "100755" if path.stat().st_mode & stat.S_IXUSR else "100644"
-        if (
-            path.is_symlink()
-            or mode != entry["mode"]
-            or digest(path.read_bytes()) != entry["sha256"]
-        ):
+        mode, content = read_entry(directory / "source", name)
+        if mode != entry["mode"] or digest(content) != entry["sha256"]:
             raise CheckError(f"Captured recovery source changed: {name}")
+    validate_symlinks(directory / "source", manifest)
     actual = {
         p.relative_to(directory / "source").as_posix()
         for p in (directory / "source").rglob("*")
@@ -501,6 +507,9 @@ def editing_problems(source, candidate, scope, directory, inputs, record_paths=(
     for name, entry in old.items():
         if entry == new.get(name):
             continue
+        if entry["mode"] == "120000":
+            problems.append(f"Recovery must preserve existing symlink: {name}")
+            continue
         if within(name, inputs) and specification_document(name, scope):
             if name in new and entry["mode"] != new[name]["mode"]:
                 problems.append(f"Recovery must preserve existing file mode: {name}")
@@ -520,7 +529,9 @@ def editing_problems(source, candidate, scope, directory, inputs, record_paths=(
                 f"Recovery changed original content beyond OFT annotation changes: {name}"
             )
     for name in new.keys() - old.keys():
-        if name not in {"scope.json", *record_paths} and not specification_document(name, scope):
+        if new[name]["mode"] == "120000" or (
+            name not in {"scope.json", *record_paths} and not specification_document(name, scope)
+        ):
             problems.append(f"Recovery added a non-specification file: {name}")
     return problems
 
@@ -741,7 +752,7 @@ def check_recovery(directory, scope_path, out, jar, java="java", *, preflight=Fa
                 # Build a disposable baseline with the candidate bytes. This is
                 # validation of an initial baseline, not a change from an empty graph.
                 validation = scratch / "validation"
-                shutil.copytree(directory / "source", validation)
+                shutil.copytree(directory / "source", validation, symlinks=True)
                 initialize(validation, "Captured source for recovery diff")
                 candidate_paths = {entry["path"] for entry in candidate.manifest}
                 for entry in manifest:
@@ -752,7 +763,7 @@ def check_recovery(directory, scope_path, out, jar, java="java", *, preflight=Fa
                         validation,
                         entry["path"],
                         entry["mode"],
-                        (candidate.root / entry["path"]).read_bytes(),
+                        read_entry(candidate.root, entry["path"])[1],
                     )
                 git(validation, "add", "--force", "--all", "--", ".")
                 (out / "proposal.patch").write_bytes(
@@ -787,7 +798,9 @@ def check_recovery(directory, scope_path, out, jar, java="java", *, preflight=Fa
                         claims, manifest, candidate, scope, directory, inventory
                     )
                     original_paths = [
-                        name for name in inventory if specification_document(name, scope)
+                        name
+                        for name, entry in inventory.items()
+                        if entry["mode"] != "120000" and specification_document(name, scope)
                     ]
                     original_items = (
                         export_items(seed, original_paths, jar.resolve(), java, out, "original")[0]
@@ -825,7 +838,7 @@ def check_recovery(directory, scope_path, out, jar, java="java", *, preflight=Fa
                 # In-place changes are already visible in Git. Isolated callers
                 # also receive a complete copy of the checked proposal.
                 if not in_place:
-                    shutil.copytree(candidate.root, out / "proposed")
+                    shutil.copytree(candidate.root, out / "proposed", symlinks=True)
                 (out / "candidate-manifest.json").write_bytes(canonical(candidate.manifest))
                 current = snapshot(draft, "worktree", scratch / "current")
                 if current.sha256 != candidate.sha256 or (
@@ -872,9 +885,9 @@ def check_recovery(directory, scope_path, out, jar, java="java", *, preflight=Fa
         render_review(result, checked, normalized), encoding="utf-8"
     )
     result["artifacts"] = {
-        p.relative_to(out).as_posix(): digest(p.read_bytes())
+        p.relative_to(out).as_posix(): digest(read_entry(out, p.relative_to(out).as_posix())[1])
         for p in sorted(out.rglob("*"))
-        if p.is_file()
+        if p.is_symlink() or p.is_file()
     }
     write_json(out / "recovery-result.json", result)
     return result

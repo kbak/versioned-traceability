@@ -244,8 +244,22 @@ Before/after checks detect modifications to captured source and concurrent
 changes to the original candidate. They cannot detect a command that changes and
 restores source while running. Ignored untracked files, Git metadata, installed
 dependencies, environment, and network state are outside source identity.
-Snapshots omit `.git` and ignored local environments, reject symlinks and
-submodules, and leave Git LFS pointers unexpanded.
+Snapshots omit `.git` and ignored local environments, reject submodules, and
+leave Git LFS pointers unexpanded.
+
+Relative symlinks within captured source retain their Git mode (`120000`) and
+target bytes; their digest hashes the target string, not the referent. File and
+directory links, link chains and dangling internal links are preserved for tests.
+Absolute links, escaping targets, cyclic link chains and links into Git metadata
+are rejected. A checkout filesystem must support native symlinks. Ignored targets
+are not copied just because a link points to them.
+
+OFT imports actual files once, without following aliases. Select the actual paths
+in trace inputs and specification/test review paths, including when selecting a
+subtree through a directory alias. Explicit alias inputs report this requirement.
+Source identity and before/after checks include link targets and modes even when
+they are outside the trace inputs. Review diffs show changed link targets rather
+than dereferenced contents.
 
 ## Evidence files
 

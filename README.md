@@ -230,7 +230,9 @@ check, supply the same baseline and scope here. For exit-4 evidence,
 `--allow-pending-review` permits matching while leaving review pending.
 
 Tests run in a snapshot that omits Git metadata and ignored local environments,
-and rejects symlinks and submodules. Arrange test dependencies accordingly.
+preserves relative symlinks within the captured source, and rejects submodules.
+Use actual source paths for tracing and citations; link aliases are not imported
+again. Arrange test dependencies accordingly.
 See the [reference](docs/contract.md) for configuration, evidence, and limits;
 [test instructions](docs/validation.md); and the packaged
 [skill](versioned_traceability/skills/versioned-traceability/SKILL.md) for agents.

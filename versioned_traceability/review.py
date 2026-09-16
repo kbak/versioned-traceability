@@ -1,6 +1,7 @@
 import difflib
 
 from .common import canonical, digest, within
+from .snapshot import read_entry
 
 
 def review_diff(base, candidate, changed):
@@ -10,12 +11,12 @@ def review_diff(base, candidate, changed):
             continue
         path = change["path"]
         left = (
-            (base.root / path).read_text(errors="replace").splitlines(keepends=True)
+            read_entry(base.root, path)[1].decode(errors="replace").splitlines(keepends=True)
             if change["before"]
             else []
         )
         right = (
-            (candidate.root / path).read_text(errors="replace").splitlines(keepends=True)
+            read_entry(candidate.root, path)[1].decode(errors="replace").splitlines(keepends=True)
             if change["after"]
             else []
         )

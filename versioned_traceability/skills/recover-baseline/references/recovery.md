@@ -129,6 +129,12 @@ The bundle contains:
 - `instructions.md`: a self-contained copy of the recovery procedure.
 
 Always read citations from the retained source/ snapshot and preserve that snapshot.
+Relative repository symlinks are retained in source, draft and proposal copies;
+inventory entries show their targets. Cite and annotate the actual files, and
+select their paths for tracing and specification/test review. Link aliases are
+not additional text evidence or OFT inputs. Preserve existing links and their
+targets during recovery. Absolute, escaping and cyclic link targets are unsupported;
+report these rather than replacing links or flattening the repository as a workaround.
 Use temporary drafting files as needed, then place proposed edits in the recorded
 workspace for validation. In-place mode leaves HEAD and the branch unchanged;
 checks reject starting-commit/branch changes and concurrent content changes.
@@ -185,8 +191,8 @@ For example, adapt this scope to a Python project that already uses pytest:
 {
   "schema_version": 1,
   "name": "recovered-session",
-  "inputs": ["docs/recovered.md", "src", "tests"],
-  "specification_paths": ["docs/recovered.md"],
+  "inputs": ["README.md", "docs/recovered.md", "src", "tests"],
+  "specification_paths": ["README.md", "docs/recovered.md"],
   "test_paths": ["tests"],
   "required_coverage": {"req": ["impl", "utest"]},
   "tests": {
