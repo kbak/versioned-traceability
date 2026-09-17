@@ -6,9 +6,10 @@ import tempfile
 from pathlib import Path
 
 from . import __version__
+from .check_output import render_check
 from .common import CheckError
 from .evidence import EXIT_CODES
-from .explain import explain, render_explanation
+from .explain import explain, explain_many, render_context, render_explanation
 from .oft import default_jar, install_jar
 from .recovery import active_recovery, check_recovery, prepare
 from .runner import check, verify
@@ -59,10 +60,15 @@ def parser():
     )
     root.add_argument("--version", action="version", version=__version__)
     commands = root.add_subparsers(dest="action", required=True)
-    explaining = commands.add_parser(
-        "explain", help="Explain an OFT item using saved check evidence"
+    explaining = commands.add_parser("explain", help="Explain OFT items using saved check evidence")
+    explaining.add_argument(
+        "identifiers", nargs="+", help="Complete OFT item IDs, including revisions"
     )
-    explaining.add_argument("identifier", help="Complete OFT item ID, including revision")
+    explaining.add_argument(
+        "--compact",
+        action="store_true",
+        help="Share metadata and deduplicate linked locations (automatic for multiple IDs)",
+    )
     explaining.add_argument("--evidence", type=Path, required=True, help="Path to evidence.json")
     explaining.add_argument("--snapshot", choices=("base", "candidate"), default="candidate")
     explaining.add_argument("--format", choices=("text", "json"), default="text")
@@ -161,10 +167,21 @@ def main(argv=None):
     args = parser().parse_args(argv)
     try:
         if args.action == "explain":
-            result = explain(args.identifier, args.evidence, args.oft_jar, args.snapshot, args.java)
+            compact = args.compact or len(args.identifiers) > 1
+            result = (
+                explain_many(
+                    args.identifiers, args.evidence, args.oft_jar, args.snapshot, args.java
+                )
+                if compact
+                else explain(
+                    args.identifiers[0], args.evidence, args.oft_jar, args.snapshot, args.java
+                )
+            )
             print(
                 json.dumps(result, indent=2)
                 if args.format == "json"
+                else render_context(result)
+                if compact
                 else render_explanation(result)
             )
             return 0
@@ -239,15 +256,7 @@ def main(argv=None):
             args.oft_jar,
             args.java,
         )
-        print(f"{result['status']}: {args.out.resolve() / 'evidence.json'}")
-        if "base" in result:
-            print(f"baseline: {result['base']['commit']}")
-        for message in result["diagnostics"]:
-            print(f"- {message}")
-        if result["status"] == "review_required":
-            print(
-                "Automated checks passed; external review of review.json/review.patch is still required."
-            )
+        print(render_check(result, args.out))
         return EXIT_CODES[result["status"]]
     except (CheckError, OSError, ValueError, KeyError, TypeError) as exc:
         print(f"error: {exc}", file=sys.stderr)

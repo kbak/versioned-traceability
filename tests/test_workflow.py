@@ -109,6 +109,9 @@ class WorkflowTests(WorkflowFixture):
         evidence = Path(stdout.splitlines()[0].split(": ", 1)[1])
         self.assertFalse(evidence.is_relative_to(self.repo))
         result = read_json(evidence)["predicate"]
+        self.assertIn("tests: passed (suite); source=matched", stdout)
+        self.assertIn(f"tests.xml: {evidence.parent / 'tests.xml'}", stdout)
+        self.assertIn("counts:", stdout)
         self.assertEqual(result["base"]["commit"], self.base)
         self.assertEqual(result["candidate"]["kind"], "worktree")
         self.assertEqual(result["scope"]["configuration"], read_json(self.scope))
@@ -129,6 +132,8 @@ class WorkflowTests(WorkflowFixture):
         self.assertNotEqual(failed_evidence.parent, evidence.parent)
         self.assertEqual(read_json(evidence)["predicate"]["status"], "passed")
         self.assertEqual(read_json(failed_evidence)["predicate"]["status"], "rejected")
+        self.assertIn("Reported failures", stdout)
+        self.assertIn("test_expiration_boundary", stdout)
 
     def test_cli_default_scope_cannot_be_weakened_by_candidate_edits(self):
         self.replace("requirements.md", "Needs: impl, utest", "Needs: impl")

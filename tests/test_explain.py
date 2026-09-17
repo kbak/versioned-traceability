@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 from test_workflow import WorkflowFixture
 
-from versioned_traceability.common import CheckError
-from versioned_traceability.explain import explain
+from versioned_traceability.common import CheckError, run
+from versioned_traceability.explain import explain, explain_many, render_context
 
 REQ = "req~session-expiration~1"
 
@@ -125,3 +125,78 @@ class ExplainTests(WorkflowFixture):
                 self.assertEqual(code, 2)
                 self.assertFalse(output)
                 self.assertIn("Unknown OFT item", error)
+
+    def test_batch_loads_one_graph_and_preserves_single_item_semantics(self):
+        self.run_check()
+        single = self.explained()
+        implementation = next(
+            ref for ref in single["artifact"]["covered_by"] if ref.startswith("impl~")
+        )
+        with patch("versioned_traceability.explain.run", wraps=run) as traced:
+            batch = explain_many([REQ, implementation, REQ], self.out / "evidence.json", self.jar)
+        self.assertEqual(traced.call_count, 1)
+        self.assertEqual([e["artifact"]["id"] for e in batch["artifacts"]], [REQ, implementation])
+        entry = batch["artifacts"][0]
+        for key in (
+            "artifact",
+            "linked_tests",
+            "linked_test_execution",
+            "execution_link_diagnostics",
+        ):
+            self.assertEqual(entry[key], single[key])
+        for key in ("source", "tests", "review", "recorded_diagnostics", "limitations"):
+            self.assertEqual(batch[key], single[key])
+        self.assertEqual(len(batch["related"]), len({ref["id"] for ref in batch["related"]}))
+        self.assertNotIn("artifacts", single)
+
+    def test_batch_cli_fails_atomically_for_one_unknown_revision(self):
+        self.run_check()
+        code, output, error = self.run_cli(
+            "explain",
+            REQ,
+            "req~session-expiration~99",
+            "--evidence",
+            str(self.out / "evidence.json"),
+        )
+        self.assertEqual(code, 2)
+        self.assertFalse(output)
+        self.assertIn("Unknown OFT item", error)
+
+    def test_compact_cli_json_is_explicit_and_text_shares_status(self):
+        self.run_check()
+        code, output, error = self.run_cli(
+            "explain", REQ, REQ, "--evidence", str(self.out / "evidence.json"), "--format", "json"
+        )
+        self.assertEqual(code, 0, error)
+        self.assertEqual(len(json.loads(output)["artifacts"]), 1)
+        code, output, error = self.run_cli(
+            "explain", REQ, "--compact", "--evidence", str(self.out / "evidence.json")
+        )
+        self.assertEqual(code, 0, error)
+        self.assertEqual(output.count("Recorded check:"), 1)
+        self.assertIn("not exhaustive impact analysis", output)
+        self.assertIn("not established", output)
+        self.assertIn("tests/test_session.py", output)
+
+    def test_compact_retains_failures_uncovered_status_and_baseline_uncertainty(self):
+        self.replace("session.py", "30 * 60", "60 * 60")
+        self.replace("tests/test_session.py", "# [utest->" + REQ + "]", "# Missing trace")
+        self.run_check()
+        result = explain_many([REQ], self.out / "evidence.json", self.jar)
+        output = render_context(result)
+        self.assertIn("deep=UNCOVERED", output)
+        self.assertIn("Tests: failed", output)
+        self.assertIn("Recorded check: rejected", output)
+        baseline = explain_many([REQ], self.out / "evidence.json", self.jar, "base")
+        self.assertEqual(baseline["tests"]["status"], "not_recorded_for_baseline")
+
+    def test_compact_collapses_shared_locations_without_losing_edges(self):
+        self.run_check()
+        result = explain_many([REQ], self.out / "evidence.json", self.jar)
+        original = result["related"][0]
+        duplicate = {**original, "id": "impl~second-claim~0"}
+        result["related"].append(duplicate)
+        result["artifacts"][0]["artifact"]["covered_by"].append(duplicate["id"])
+        output = render_context(result)
+        self.assertEqual(output.count(f"{original['path']}:{original['line']}"), 1)
+        self.assertIn(duplicate, result["related"])

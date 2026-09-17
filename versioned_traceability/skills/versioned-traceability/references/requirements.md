@@ -9,6 +9,11 @@ is embedded in an agent context, the semantic contract is included alongside it.
 
 Discussion alone does not require installing or running tooling. For authorized
 implementation, use the chosen tool checkout/revision and its matching skill.
+When only a skill link is supplied, clone its repository/ref over HTTPS into a
+new directory outside the target project and resolve it to a commit. For an
+unversioned copy without a supplied source, use
+`https://github.com/kbak/versioned-traceability.git` at main. Reread the matching
+skill and references, and retain the tooling revision for the handoff.
 Resolve relative references there, not in the target project. Reuse a supplied
 local checkout, packaged skill/runtime or inline reference when available. If an
 installed vt cannot be tied to that source, install from the chosen checkout into

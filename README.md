@@ -182,7 +182,14 @@ Each run gets a new output directory. Use `--out ../check-1` to retain evidence
 outside temporary storage; the directory must be outside the repository and
 must not already exist. Recheck after edits: a previous report describes the
 earlier contents. The command prints the selected baseline commit as well as the
-evidence path.
+evidence path, test counts, source stability, review status, and exact paths to
+retained reports. Failure details are excerpted; complete diagnostics and logs
+remain in the bundle. Start with this summary and open details as needed.
+
+Review the full candidate Git diff and related behavior. `review.patch` selects
+specification/test changes; it does not replace a code review. After a small
+repair, review its delta and affected links, then rerun the check on the current
+candidate. The configured tests already run as part of that check.
 
 ## Read the result
 
@@ -198,6 +205,14 @@ or `--snapshot base` for the baseline. It uses OFT's native XML graph report ove
 the retained export; it does not need the original checkout or rerun tests.
 Exit 0 means the explanation was produced, even when the recorded check failed.
 See the [explanation reference](docs/contract.md#explain-saved-evidence) for limits.
+
+Supply several complete IDs in one invocation to load the graph once and produce
+compact context: descriptions and links for each item, deduplicated linked
+locations, and shared evidence status. `--compact` selects this output for one
+ID too. This assembly is deterministic; callers still select relevant IDs and
+check for dependencies beyond their immediate links. No AI service is required.
+With multiple IDs or `--compact`, JSON contains `artifacts` plus shared metadata
+and `related` references. Existing single-ID JSON remains unchanged.
 
 To associate individual reported test outcomes with OFT artifacts, enable the
 optional [execution-link profile](versioned_traceability/skills/versioned-traceability/references/execution-links.md).

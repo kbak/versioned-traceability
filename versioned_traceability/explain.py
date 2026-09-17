@@ -55,7 +55,11 @@ def report_items(path):
     return items
 
 
-def explain(identifier, evidence_path, jar, snapshot="candidate", java="java"):
+def explain_many(identifiers, evidence_path, jar, snapshot="candidate", java="java"):
+    """Load one retained graph and share evidence metadata across exact IDs."""
+    identifiers = list(dict.fromkeys(identifiers))
+    if not identifiers:
+        raise CheckError("Supply at least one complete OFT item ID")
     if snapshot not in {"base", "candidate"}:
         raise CheckError("Select the base or candidate snapshot")
     evidence_path = evidence_path.resolve()
@@ -110,33 +114,45 @@ def explain(identifier, evidence_path, jar, snapshot="candidate", java="java"):
                 + (output / "trace.log").read_text(errors="replace")
             )
         items = report_items(report)
-    if identifier not in items:
-        raise CheckError(
-            f"Unknown OFT item in {snapshot}: {identifier}; use the complete ID and revision"
-        )
-    item = items[identifier]
-    related = sorted(set(item["covers"] + item["covered_by"]))
+    for identifier in identifiers:
+        if identifier not in items:
+            raise CheckError(
+                f"Unknown OFT item in {snapshot}: {identifier}; use the complete ID and revision"
+            )
     tests = (
         evidence["tests"] if snapshot == "candidate" else {"status": "not_recorded_for_baseline"}
     )
     links = (
         retained_execution_links(evidence, directory, scope) if snapshot == "candidate" else None
     )
-    execution_status, linked_tests, execution_diagnostics = explain_execution(
-        identifier, items, links, tests
-    )
+    artifacts = []
+    related = set()
+    for identifier in identifiers:
+        item = items[identifier]
+        related.update(item["covers"] + item["covered_by"])
+        execution_status, linked_tests, execution_diagnostics = explain_execution(
+            identifier, items, links, tests
+        )
+        artifacts.append(
+            {
+                "artifact": item,
+                "linked_test_execution": execution_status,
+                "linked_tests": linked_tests,
+                "execution_link_diagnostics": execution_diagnostics,
+            }
+        )
     return {
         "schema_version": 1,
         "evidence": str(evidence_path),
         "snapshot": snapshot,
         "source": evidence[snapshot],
         "scope": {"name": scope["name"], "sha256": evidence["scope"]["sha256"]},
-        "artifact": item,
+        "artifacts": artifacts,
         "related": [
             {key: items[ref][key] for key in ("id", "title", "path", "line")}
             if ref in items
             else {"id": ref, "missing": True}
-            for ref in related
+            for ref in sorted(related)
         ],
         "recorded_check_status": evidence["status"],
         "recorded_diagnostics": evidence.get("diagnostics", []),
@@ -146,9 +162,6 @@ def explain(identifier, evidence_path, jar, snapshot="candidate", java="java"):
             for key in ("status", "level", "source_status", "counts")
             if key in tests
         },
-        "linked_test_execution": execution_status,
-        "linked_tests": linked_tests,
-        "execution_link_diagnostics": execution_diagnostics,
         "review": evidence.get("review", {"status": "not_recorded"}),
         "limitations": [
             "Describes the saved bundle; use vt verify to match current source. Artifact hashes do not authenticate the unsigned producer.",
@@ -156,6 +169,13 @@ def explain(identifier, evidence_path, jar, snapshot="candidate", java="java"):
             "Review is the recorded check gate, not an approval decision. Claim origin is not recorded in ordinary check bundles.",
         ],
     }
+
+
+def explain(identifier, evidence_path, jar, snapshot="candidate", java="java"):
+    """Keep the single-artifact API and JSON shape unchanged."""
+    result = explain_many([identifier], evidence_path, jar, snapshot, java)
+    artifact = result.pop("artifacts")[0]
+    return {**result, **artifact}
 
 
 def render_explanation(result):
@@ -173,18 +193,28 @@ def render_explanation(result):
         f"  {ref['id']}: {ref.get('path', '(missing)')}:{ref.get('line', '')}"
         for ref in result["related"]
     )
+    lines.extend(_execution_lines(result))
+    lines.extend(_status_lines(result))
+    return "\n".join(lines)
+
+
+def _status_lines(result):
     tests = result["tests"]
-    lines.extend(
-        [
-            f"Recorded check: {result['recorded_check_status']}",
-            f"Tests: {tests['status']} ({tests.get('level', 'no baseline execution recorded')}); source={tests.get('source_status', 'not recorded')}",
-            "Execution of linked tests: " + result["linked_test_execution"].replace("_", " "),
-            f"Recorded review gate: {result['review']['status']}",
-            f"Source: {result['source']['sha256']}",
-            f"Scope: {result['scope']['name']} ({result['scope']['sha256']})",
-            f"Evidence: {result['evidence']}",
-        ]
-    )
+    lines = [
+        f"Recorded check: {result['recorded_check_status']}",
+        f"Tests: {tests['status']} ({tests.get('level', 'no baseline execution recorded')}); source={tests.get('source_status', 'not recorded')}",
+        f"Recorded review gate: {result['review']['status']}",
+        f"Source: {result['source']['sha256']}",
+        f"Scope: {result['scope']['name']} ({result['scope']['sha256']})",
+        f"Evidence: {result['evidence']}",
+    ]
+    lines.extend(f"Diagnostic: {message}" for message in result["recorded_diagnostics"])
+    lines.extend(result["limitations"])
+    return lines
+
+
+def _execution_lines(result):
+    lines = ["Execution of linked tests: " + result["linked_test_execution"].replace("_", " ")]
     for linked in result["linked_tests"]:
         lines.append(f"  {linked['id']}: {linked['status'].replace('_', ' ')}")
         for case in linked["cases"]:
@@ -196,6 +226,50 @@ def render_explanation(result):
             for detail in case["details"]:
                 lines.append("      " + ": ".join(value for value in detail.values() if value))
     lines.extend(f"Execution link: {message}" for message in result["execution_link_diagnostics"])
-    lines.extend(f"Diagnostic: {message}" for message in result["recorded_diagnostics"])
-    lines.extend(result["limitations"])
+    return lines
+
+
+def render_context(result):
+    """Compact, deterministic projection; descriptions and diagnostics are retained."""
+    locations = {}
+    references = {}
+    for ref in sorted(
+        result["related"], key=lambda r: (r.get("path", ""), r.get("line", 0), r["id"])
+    ):
+        key = (ref.get("path"), ref.get("line")) if not ref.get("missing") else (None, ref["id"])
+        if key not in locations:
+            locations[key] = {"label": f"L{len(locations) + 1}", "refs": []}
+        locations[key]["refs"].append(ref)
+        references[ref["id"]] = locations[key]["label"]
+    lines = ["Selected artifacts (immediate links; not exhaustive impact analysis)"]
+    for entry in result["artifacts"]:
+        item = entry["artifact"]
+        lines.extend(
+            [
+                "",
+                f"{item['id']}: {item['title']}",
+                f"Location ({result['snapshot']}): {item['path']}:{item['line']}",
+                item["description"],
+                f"Needs: {', '.join(item['needs']) or '(none)'}; OFT coverage: shallow={item['coverage']['shallow']}, deep={item['coverage']['deep']}",
+            ]
+        )
+        for field, label in (("covers", "Covers"), ("covered_by", "Covered by")):
+            labels = dict.fromkeys(references[ref] for ref in item[field])
+            lines.append(f"{label}: {', '.join(labels) or '(none)'}")
+        lines.extend(_execution_lines(entry))
+    lines.extend(["", "Linked locations (deduplicated; complete related IDs in JSON):"])
+    for (path, line), location in locations.items():
+        types = sorted({ref["id"].split("~", 1)[0] for ref in location["refs"]})
+        lines.append(
+            f"{location['label']} {', '.join(types)}: {path}:{line}"
+            if path is not None
+            else f"{location['label']} missing: {line}"
+        )
+        lines.extend(
+            f"  {ref['id']}: {ref['title']}"
+            for ref in location["refs"]
+            if ref["id"].startswith("req~") and not ref.get("missing")
+        )
+    lines.append("")
+    lines.extend(_status_lines(result))
     return "\n".join(lines)

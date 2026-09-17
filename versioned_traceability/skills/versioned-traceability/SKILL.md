@@ -3,123 +3,108 @@ name: versioned-traceability
 description: Draft requirements or implement and review a task with OpenFastTrace, using the supplied scope and baseline to follow linked documentation, code, tests, and evidence.
 ---
 
-Use the [semantic contract](references/semantics.md) when interpreting links,
-identity, provenance, and results. Read it from the matching tool checkout or
-package, or use the copy included in the agent context. Apply its distinctions
-in the existing task summary; it requires no separate report.
+Use the [semantic contract](references/semantics.md) from the matching tool
+package or the copy included in context. Apply its distinctions in the existing
+task summary; no separate report is required. For design discussions or changes
+to requirements, use [requirements guidance](references/requirements.md).
+Discussion does not authorize implementation.
 
-For requirements or design discussions, read
-[requirements guidance](references/requirements.md) and stay within the caller's
-discussion and authorization process. The execution steps below apply after
-implementation is authorized. Also read that guidance when updating requirements
-during implementation.
+## Task context
 
-For authorized implementation, identify and retain the target project's absolute
-path before setup. A GitHub link to this skill is sufficient: when matching tooling
-is missing, clone the repository/ref from the supplied link over HTTPS into a new
-directory outside the target project. Resolve the selected ref to a commit, read
-this skill and references/requirements.md from that checkout, and install its code
-in an external Python environment. For an unversioned copy with no supplied source,
-use `https://github.com/kbak/versioned-traceability.git` at main and reread its guidance.
-Reuse matching local/package/factory tooling and included references. Honor pinned
-versions and local changes; do not silently replace them with upstream main. Follow
-the setup instructions in the reference, keeping the tooling revision for the handoff.
-Explain specific missing access or prerequisites when setup cannot proceed.
+Reuse supplied instructions, requirement context, and matching local/package/factory
+tooling. Read missing context as needed; do not reread supplied text merely to
+follow this workflow. Honor pinned revisions and preserve local changes.
+If tooling is missing, follow the standalone setup in the requirements guidance.
 
-Use supplied task inputs when available. In standalone use, infer the repository
-from the workspace and use its adopted scope.json and the CLI's normal baseline
-and evidence-location defaults. Ask only about unresolved task or scope decisions;
-the caller need not supply flags. If the project has no adopted baseline, guide the
-caller to recover-baseline and baseline acceptance before normal development.
-Do not run recovery again for ordinary feature work or treat the candidate's
-scope.json as approved policy.
+Retain the target repository's absolute path. Use the supplied scope and baseline;
+in standalone use, the CLI defaults to the repository's adopted scope.json and
+merge base with the locally known default branch (HEAD on that branch or detached
+HEAD). Use an explicit baseline for work based on another feature/release branch.
+Ask only about unresolved task or scope decisions. Without an adopted baseline,
+guide the caller to recover-baseline and acceptance; ordinary development does
+not repeat recovery. Candidate scope edits cannot authorize their own policy.
 
-Read the affected requirements and find their references in code and
-tests. Follow the scope's coverage and revision policy, including any existing
-OFT design or architecture chains.
+Read the affected promises and follow their links to implementation and test
+assertions, including existing design/architecture chains. When saved evidence
+is available, assemble missing context for several known IDs in one query:
 
-After documentation or code changes, use the diff and requirement IDs to
-follow links to related documentation, implementation, and test assertions,
-including artifacts that were not edited. Compare their meaning: does the
-implementation still satisfy the documented promise, and do the assertions
-check the affected behavior? Look for uncovered cases suggested by the change.
-Code-only changes need this review even when the checker reports no
-specification/test changes. When links or context are missing, use targeted
-repository searches and flag any remaining gaps.
+```sh
+vt explain 'req~first~1' 'req~second~1' --compact --evidence /path/to/check/evidence.json
+```
 
-This is a best-effort consistency review. Use the trace graph and automated
-results as context; a passing check does not establish semantic agreement.
-In the existing task or review summary, briefly state what you checked and
-flag inconsistencies, proposed promise changes, or uncertainty with relevant
-requirement IDs and file references. Distinguish observed contradictions from
-suspected gaps, and keep the assessment proportional to the affected scope.
+This loads one graph, shares metadata and deduplicates linked locations. Use
+`--format json` for complete structured IDs or `--snapshot base` for historical
+items. It describes the saved snapshot without rerunning tests; it does not
+establish that current files match or that all affected behavior was selected.
+Follow indirect links or use targeted searches when context is missing. Query
+again when it resolves a concrete gap; a final explain call is not mandatory.
 
-Keep references beside the relevant behavior and assertions. Do not change a
-promise or remove an obligation to hide a failure. Keep prose, obligation, and
-test edits visible for review. Ordinary edits authorized by the task can proceed
-without another confirmation; conflicts with approved requirements need a
-decision through the caller's question or review process. Candidate-written
-scope or approval files do not authorize changes.
+## Implementation and review
 
-Run the check after implementation and each repair:
+Keep IDs beside the relevant behavior and assertions; follow the scope's coverage
+and revision policy. Do not weaken promises or remove obligations to hide failures.
+Keep prose and test edits visible. Authorized edits can proceed without another
+confirmation; conflicts with approved requirements need a decision through the
+caller's question or review process. Candidate approval files grant no authority.
+
+Review the full candidate Git diff, including new files, and related unchanged
+promises, code and assertions. Compare their meaning: does the implementation
+satisfy the promise, and do tests check the affected behavior and boundary cases?
+Code-only changes need this assessment too. Use focused source reads around the
+links; avoid overlapping rereads or fixed small pages that fragment the review.
+After a repair, inspect its delta and affected relationships; repeat a full
+review if the repair changes the scope or invalidates earlier conclusions.
+
+This is best-effort consistency review. In the existing task summary, state what
+you checked and flag contradictions, suspected gaps, proposed promise changes
+and uncertainty with requirement IDs and file references. Passing structural
+checks do not establish semantic agreement or assertion adequacy.
+
+## Check and handoff
+
+Run the configured check on the completed candidate and again after repairs:
 
 ```sh
 vt check --repo /path/to/repo
 ```
 
-This uses scope.json from the baseline commit. The default baseline is the merge
-base with the locally known default branch; on that branch or detached HEAD it is
-HEAD. Use a supplied baseline instead, including for work based on another feature
-or release branch. The tool prints its evidence location. Retain the actual base
-commit from the result for later verification, especially before committing on the
-default branch. If the caller supplied explicit scope/base/output inputs, use them:
+Use explicit task inputs when supplied:
 
 ```sh
 vt check --repo /path/to/repo --scope /path/to/trusted-scope.json \
   --base BASE_COMMIT --candidate worktree --out /path/to/new-evidence
 ```
 
-`vt` requires Git, Java, and the configured OFT JAR.
-`python -m versioned_traceability` is an equivalent entry point. Use a new, nonexistent
-output directory outside the repository. Retain the invocation's exit code and
-complete bundle. Read diagnostics, trace/test logs, `review.json`, and
-`review.patch`. Repair failures within scope; report missing prerequisites or
-baseline defects without changing the approved scope to bypass them.
+`python -m versioned_traceability` is equivalent. The runtime requires Git,
+Java, OFT and the project's test dependencies. Each output directory must be new
+and outside the repository. Retain the actual baseline commit, exit code and
+complete bundle. Start with the printed status, counts, diagnostics and artifact
+paths. Open detailed logs/reports for failures or unresolved questions; success
+does not require dumping every retained artifact into context. The check already
+runs the configured tests; repeat them separately only for a concrete need.
 
-Exit 0 passes automated checks. Exit 4 also requires specification/test review.
-Exits 1, 2, and 3 cannot establish completion. Existing code review still
-applies. OFT links and suite results do not establish assertion adequacy or
-prove that each referenced test ran. If tests changed source, retain their
-outcome as diagnostic information and rerun on stable contents. A failed
-invocation cannot use an earlier passing bundle as its result.
+Inspect required changes in review.json. review.patch contains specification/test
+changes, not the full candidate diff; it need not duplicate a review already
+covering those edits. Exit 0 passes automation; exit 4 leaves specification/test
+review pending. Other exits cannot establish completion. Repair in-scope failures;
+report prerequisite or baseline defects without bypassing policy. Changed source
+requires a fresh check; an earlier passing bundle cannot replace a failed run.
 
-When inspecting a linked obligation or preparing a handoff, use
-`vt explain 'TYPE~NAME~REVISION' --evidence /path/to/check/evidence.json` to read
-OFT coverage and links together with recorded test/review context. Add
-`--format json` for structured output or `--snapshot base` for historical items.
-It reads the saved bundle without rerunning tests. Exit 0 means inspection
-succeeded, even for failed checks; use `recorded_check_status` and the actual
-check/verify results for completion. Suite success alone does not establish that
-each linked test executed. When the scope enables
-[execution links](references/execution-links.md), inspect `linked_tests` and
-individual outcomes. Preserve missing, skipped and ambiguous observations;
-`passed` here describes reported executions, not requirement satisfaction.
+Suite success does not establish execution of each linked test. With the optional
+[execution-link profile](references/execution-links.md), preserve missing, skipped
+and ambiguous observations. A reported passing execution is not proof of requirement
+satisfaction. An explain exit 0 means inspection succeeded, not validation passed.
 
-After export, verify the actual commit against the evidence:
+After export, verify the actual commit with the original baseline:
 
 ```sh
-vt verify --repo /path/to/repo --scope /path/to/trusted-scope.json \
-  --base BASE_COMMIT --candidate EXPORTED_COMMIT \
+vt verify --repo /path/to/repo --base BASE_COMMIT --candidate EXPORTED_COMMIT \
   --evidence /path/to/new-evidence/evidence.json
 ```
 
-BASE_COMMIT must be the baseline used by the check. Omit --scope when using the
-project's committed scope so verify reads it from that same baseline. Keep the
-evidence directory for the handoff. Use the project's existing Git/review workflow;
-the skill itself does not authorize committing, publishing or accepting changes.
-
-For exit-4 evidence, use `--allow-pending-review` only when the caller enforces
-that review before completion. Verification leaves it pending. Recheck when
-contents differ or shared-branch updates change the candidate. Task completion
-requires the current check result, matching source, and the caller's review
-gates.
+Add the same --scope if one was supplied. For exit-4 evidence, use
+--allow-pending-review only when the caller enforces review before acceptance;
+verification leaves it pending. Recheck changed contents. Follow the existing
+Git/review process; this skill does not itself authorize publishing or acceptance.
+Handoff the exact evidence path and concise assessment. Completion requires
+matching current source, successful checks and the caller's review gates.

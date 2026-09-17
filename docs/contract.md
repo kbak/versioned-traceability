@@ -13,7 +13,7 @@ including which conclusions the evidence supports.
 | `vt install-oft` | None; optional `--destination DIRECTORY` | Downloads and checksum-verifies the configured OFT release. |
 | `vt check` | None | Traces both versions, runs candidate tests, and writes evidence. |
 | `vt verify` | `--evidence` | Matches saved evidence to the selected scope, base, and candidate. |
-| `vt explain` | Complete OFT item ID and `--evidence` | Explains one item from the retained OFT graph and check evidence. |
+| `vt explain` | Complete OFT item IDs and `--evidence` | Explains selected items from the retained OFT graph and check evidence. |
 | `vt recover` | None; defaults to current clean repository at HEAD | Preserves original source and prepares in-place recovery; `--isolated` creates a separate draft. No automatic extraction or tests. |
 | `vt recover-check` | None for an active in-place recovery; `--recovery` for an isolated bundle | Validates a proposed baseline; automation never grants adoption. |
 
@@ -43,6 +43,26 @@ OFT shallow/deep coverage, `covers`, `covered_by`), immediate `related` location
 `source`, `scope`, `recorded_check_status`, `tests`, `review`, and `limitations`.
 Follow a related ID with another invocation to traverse a design chain. Coverage
 refers to the native OFT graph; the recorded diagnostics also show policy failures.
+
+Several positional IDs select compact output automatically; `--compact` selects
+it for one ID. The command validates the retained bundle and loads OFT's graph
+once, then returns each distinct requested ID in first-occurrence order. Any
+unknown ID or revision fails the whole request without partial output.
+
+Compact text retains full descriptions, per-item coverage and execution outcomes,
+with immediate edges referring to a shared table of distinct path/line locations.
+Table labels such as `L1` are local display references, not persistent artifact
+IDs. Evidence status, diagnostics and limitations appear once. The compact JSON
+shape retains schema version 1 and uses `artifacts`, a list of objects containing
+`artifact`, `linked_test_execution`, `linked_tests` and
+`execution_link_diagnostics`. Other metadata is shared at the top level;
+`related` deduplicates by artifact ID and preserves complete IDs and locations.
+Without `--compact`, a single ID retains its existing JSON shape.
+
+Context assembly requires no AI inference, relevance ranking or source checkout.
+It describes exactly the selected artifacts and their immediate links; it does
+not establish that the selection is complete, traverse all indirect dependencies,
+or determine whether a requested behavior change is authorized.
 
 `linked_test_execution` remains `not_established` without the optional
 [execution-link profile](../versioned_traceability/skills/versioned-traceability/references/execution-links.md).
@@ -82,6 +102,16 @@ storage and prints the evidence path. To retain evidence elsewhere, supply
 `--out`: it must be a new directory outside the repository. Keep the full output
 bundle when moving or retaining evidence. If the system temporary directory is
 inside the repository, an explicit output path is required.
+
+The check's text summary retains the `STATUS: /path/to/evidence.json` first line
+and prints baseline/source identity, test counts and source stability, review
+status, and available review/trace/test artifact paths. It shows up to five
+diagnostics (600 characters each) and three reported failing cases (650 detail
+characters each). When no failing case is available, it shows a bounded test-log
+tail. Excerpts and omitted diagnostics/cases are labeled. Full evidence, reports,
+exit codes and validation policy are unchanged; consumers needing structured
+results should read evidence.json. `review.patch` covers specification/test changes,
+so the caller still reviews the full candidate Git diff, including new files.
 
 For `verify`, use the same baseline and scope as the original check. If the
 default baseline has moved, pass its original commit with `--base`.
