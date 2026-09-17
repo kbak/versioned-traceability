@@ -28,6 +28,18 @@ class ReportTests(unittest.TestCase):
         with self.assertRaisesRegex(CheckError, "declared test count"):
             self.parse('<testsuite tests="3"><testcase name="one"/></testsuite>')
 
+    def test_unsupported_wrappers_cannot_hide_failing_cases(self):
+        for wrapper in ("testsuites", "unexpected"):
+            with (
+                self.subTest(wrapper=wrapper),
+                self.assertRaisesRegex(CheckError, "not every testcase was parsed"),
+            ):
+                self.parse(
+                    '<testsuites tests="2"><testsuite><testcase name="ok"/></testsuite>'
+                    f'<{wrapper}><testsuite><testcase name="broken"><failure/></testcase>'
+                    f"</testsuite></{wrapper}></testsuites>"
+                )
+
     def test_suite_failure_without_failed_case_is_visible(self):
         result = self.parse('<testsuite errors="1"><testcase name="one"/></testsuite>')
         self.assertTrue(result["suite_failed"])

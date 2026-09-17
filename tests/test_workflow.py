@@ -12,7 +12,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from versioned_traceability.cli import main
-from versioned_traceability.common import CheckError, read_json, write_json
+from versioned_traceability.common import CheckError, digest, read_json, write_json
 from versioned_traceability.evidence import statement
 from versioned_traceability.oft import default_jar, validate_jar
 from versioned_traceability.runner import check, verify
@@ -101,6 +101,33 @@ class WorkflowFixture(unittest.TestCase):
 
 
 class WorkflowTests(WorkflowFixture):
+    def test_unparsed_junit_failure_cannot_pass_check_or_verification(self):
+        report = (
+            '<testsuites tests="2"><testsuites tests="1"><testsuite tests="1">'
+            '<testcase name="broken"><failure/></testcase></testsuite></testsuites>'
+            '<testsuite tests="1"><testcase name="ok"/></testsuite></testsuites>'
+        )
+        self.run_check()
+        (self.out / "tests.xml").write_text(report)
+        evidence = read_json(self.out / "evidence.json")
+        evidence["predicate"]["artifacts"]["tests.xml"] = digest(report.encode())
+        write_json(self.out / "evidence.json", evidence)
+        with self.assertRaisesRegex(CheckError, "not every testcase was parsed"):
+            verify(self.repo, self.scope, self.base, "worktree", self.out / "evidence.json")
+        self.configure(
+            lambda scope: scope["tests"].update(
+                command=[
+                    sys.executable,
+                    "-c",
+                    f"from pathlib import Path; Path('test-results.xml').write_text({report!r})",
+                ]
+            )
+        )
+        result = self.run_check()
+        self.assertEqual(result["status"], "rejected")
+        self.assertEqual(result["tests"]["status"], "error")
+        self.assertIn("not every testcase was parsed", result["tests"]["error"])
+
     def test_cli_defaults_check_local_changes_from_subdirectory_and_verify(self):
         self.replace("session.py", "30 * 60", "1800")
         before = self.git("status", "--porcelain")

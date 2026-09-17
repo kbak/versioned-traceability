@@ -13,7 +13,11 @@ class ReportCase(TestCase):
 
 
 def report_cases(root):
-    return [ReportCase.fromelem(case) for suite in JUnitXml.fromroot(root) for case in suite]
+    cases = [ReportCase.fromelem(case) for suite in JUnitXml.fromroot(root) for case in suite]
+    # Unsupported wrappers must not silently hide cases from junitparser's iterator.
+    if len(cases) != len(list(root.iter("testcase"))):
+        raise CheckError("Unsupported JUnit structure: not every testcase was parsed")
+    return cases
 
 
 def skipped(case):
