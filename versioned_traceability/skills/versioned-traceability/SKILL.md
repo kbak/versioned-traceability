@@ -14,7 +14,7 @@ Discussion does not authorize implementation.
 Reuse supplied instructions, requirement context, and matching local/package/factory
 tooling. Read missing context as needed; do not reread supplied text merely to
 follow this workflow. Honor pinned revisions and preserve local changes.
-If tooling is missing, follow the standalone setup in the requirements guidance.
+If tooling is missing, follow the [standalone setup](references/setup.md).
 
 Retain the target repository's absolute path. Use the supplied scope and baseline;
 in standalone use, the CLI defaults to the repository's adopted scope.json and
