@@ -21,6 +21,63 @@ class SummaryTests(unittest.TestCase):
             "review": {"status": "not_needed"},
         }
 
+    def item(self, description, revision=1):
+        return {
+            "id": f"req~session-expiration~{revision}",
+            "path": "requirements.md",
+            "line": 3,
+            "content": {"description": description},
+        }
+
+    def test_long_description_shows_changed_behavior_and_escapes_markup(self):
+        prefix = "Shared context. " * 100
+        suffix = " More details." * 100
+        before = self.item(prefix + "Expire after 30 minutes. <old>|" + suffix)
+        after = self.item(prefix + "Expire after 5 minutes. <new>|" + suffix)
+        changed = [{"kind": "requirement", "before": before, "after": after}]
+        original = copy.deepcopy(changed)
+        text = render_summary(self.evidence, changed, {"review.json", "review.patch"})
+        self.assertIn("Expire after 30 minutes.", text)
+        self.assertIn("Expire after 5 minutes.", text)
+        self.assertIn("&lt;new&gt;&#124;", text)
+        self.assertNotIn("<new>", text)
+        self.assertNotIn(prefix, text)
+        self.assertNotIn(suffix, text)
+        self.assertIn("…", text)
+        self.assertIn("may omit later differences", text)
+        self.assertEqual(changed, original)
+
+    def test_added_removed_and_revision_only_changes_retain_their_meaning(self):
+        unchanged = "Sessions expire after 30 minutes."
+        changed = [
+            {"kind": "requirement", "before": None, "after": self.item("New promise.")},
+            {"kind": "requirement", "before": self.item("Old promise."), "after": None},
+            {
+                "kind": "requirement",
+                "before": self.item(unchanged),
+                "after": self.item(unchanged, 2),
+            },
+        ]
+        text = render_summary(self.evidence, changed, {"review.json", "review.patch"})
+        self.assertIn("| Added | — |", text)
+        self.assertIn("New promise.", text)
+        self.assertIn("| Removed |", text)
+        self.assertIn("Old promise.</code> | — |", text)
+        self.assertEqual(text.count(unchanged), 2)
+        self.assertIn("req~session-expiration~2", text)
+        self.assertIn("metadata changes", text)
+
+    def test_missing_and_structured_descriptions_do_not_prevent_a_report(self):
+        before = self.item("")
+        after = self.item([["detail", "Nested description"]])
+        text = render_summary(
+            self.evidence,
+            [{"kind": "requirement", "before": before, "after": after}],
+            {"review.json", "review.patch"},
+        )
+        self.assertIn("no description recorded", text)
+        self.assertIn("See review.json for the structured description.", text)
+
     def test_command_success_does_not_invent_case_execution_or_approval(self):
         original = copy.deepcopy(self.evidence)
         text = render_summary(self.evidence, [], {"review.json", "review.patch", "tests.log"})
@@ -80,6 +137,8 @@ class SummaryWorkflowTests(WorkflowFixture):
         self.assertIn("Changed specification/test files: 1", text)
         self.assertEqual(text.count("req~session-expiration~1"), 2)
         self.assertIn("| Modified |", text)
+        self.assertIn("inactivity reaches 30 minutes", text)
+        self.assertIn("inactivity reaches 60 minutes", text)
         self.assertIn(result["candidate"]["sha256"], text)
         self.assertIn("Candidate: worktree based on commit", text)
         self.assertIn(result["scope"]["sha256"], text)

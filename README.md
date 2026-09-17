@@ -56,6 +56,11 @@ For an existing JAR, set `VT_OFT_JAR` or pass `--oft-jar` to `vt check`.
 
 ## Recover an existing project
 
+Start with the capability you intend to change next, including its dependencies
+and boundary cases. You do not need to document the entire repository first.
+Recover and review that baseline, then grow coverage as later work needs it;
+scope changes still use the existing review process.
+
 Give your coding agent the [recovery skill](versioned_traceability/skills/recover-baseline/SKILL.md)
 and ask: **"Recover this repository's baseline and guide me through it."** The
 agent inspects the project, helps choose scope, prepares the draft and runs checks.
@@ -194,8 +199,9 @@ candidate. The configured tests already run as part of that check.
 ## Read the result
 
 Open `summary.md` in the printed evidence directory for a human-readable overview:
-changed specification IDs and locations, recorded checks, skipped or unobserved
-linked tests when execution links are enabled, and the exact source/policy digests.
+added, removed and modified specification IDs, locations and before/after
+description excerpts, recorded checks, skipped or unobserved linked tests when
+execution links are enabled, and the exact source/policy digests.
 It links to the complete records and preserves pending review and evidence limits.
 The checker renders it from results already collected; it runs no additional tests,
 OFT commands, or agents. Default CLI output is unchanged.

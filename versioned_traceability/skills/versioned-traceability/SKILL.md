@@ -24,20 +24,18 @@ Ask only about unresolved task or scope decisions. Without an adopted baseline,
 guide the caller to recover-baseline and acceptance; ordinary development does
 not repeat recovery. Candidate scope edits cannot authorize their own policy.
 
-Read the affected promises and follow their links to implementation and test
-assertions, including existing design/architecture chains. When saved evidence
-is available, assemble missing context for several known IDs in one query:
+Locate affected promises through existing headings, capability tables or targeted
+searches; read their full text and follow links through design, code and assertions.
+When saved evidence is available, assemble missing context for known IDs together:
 
 ```sh
 vt explain 'req~first~1' 'req~second~1' --compact --evidence /path/to/check/evidence.json
 ```
 
-This loads one graph, shares metadata and deduplicates linked locations. Use
-`--format json` for complete structured IDs or `--snapshot base` for historical
-items. It describes the saved snapshot without rerunning tests; it does not
-establish that current files match or that all affected behavior was selected.
-Follow indirect links or use targeted searches when context is missing. Query
-again when it resolves a concrete gap; a final explain call is not mandatory.
+This shares metadata and linked locations without rerunning tests. Use
+`--format json` for structured IDs or `--snapshot base` for historical items. Saved evidence
+does not establish current-source agreement or complete impact coverage. Follow
+indirect links as needed; query only to resolve gaps, not as a required final step.
 
 ## Implementation and review
 
@@ -55,10 +53,10 @@ links; avoid overlapping rereads or fixed small pages that fragment the review.
 After a repair, inspect its delta and affected relationships; repeat a full
 review if the repair changes the scope or invalidates earlier conclusions.
 
-This is best-effort consistency review. In the existing task summary, state what
-you checked and flag contradictions, suspected gaps, proposed promise changes
-and uncertainty with requirement IDs and file references. Passing structural
-checks do not establish semantic agreement or assertion adequacy.
+In the existing task summary, state what you checked, reuse or update the handoff's
+requirement-change summary, and flag contradictions, gaps and uncertainty with
+IDs and file references. This is best-effort review; structural checks do not
+establish semantic agreement or assertion adequacy.
 
 ## Check and handoff
 

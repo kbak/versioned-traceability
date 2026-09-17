@@ -20,6 +20,12 @@ local changes. It handles prerequisites, bundle preparation, drafting and checks
 You do not need to supply commands, output paths, or a scope.json yourself.
 Existing caller decisions are reused. The commands below also support manual use.
 
+For a large repository, start with the capability you will change next, its
+dependencies and boundary cases. For example: "Recover session expiration and
+logout; defer billing and notifications." Review and adopt that bounded baseline
+before changing behavior. Later work can extend coverage through the existing
+scope/review process; it need not repeat recovery for already adopted promises.
+
 The default is one focused session: extract the main promises, make one short
 omissions pass through relevant regression tests and entry points, then hand off.
 A small Markdown table identifies recovered capabilities, deferred work and scope

@@ -200,6 +200,13 @@ content/modes. It covers intermediate design artifacts and prose outside
 artifact blocks. `review.json` records the changes and their source/scope
 digests; `review.patch` displays the text diff.
 
+`summary.md` labels added, removed and modified items and shows before/after
+description excerpts for up to 20 items. Each side includes up to 240 description
+characters, with ellipses for omitted text. Excerpts normalize whitespace and
+start near the first description difference when possible; they can omit later
+differences and metadata changes. Full records remain in review.json/review.patch.
+Rendering uses already-collected evidence and does not infer rationale or approval.
+
 When automated checks pass, any specification or test change produces
 `review_required`. The caller's review process decides whether the change is
 adequate and authorized. Ordinary edits covered by the task proceed to that

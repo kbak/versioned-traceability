@@ -42,9 +42,9 @@ is unavailable, explain the specific blocker and request only the missing access
 If no bundle was supplied, identify the repository from the workspace and inspect
 its documentation, source layout, test setup, and Git status. Ask for the repository
 only if it cannot be identified. Honor any scope already requested. Otherwise,
-recommend a practical first scope based on that inspection and ask which area
-the caller wants to recover, using a small set of concrete choices. A small
-project may fit one pass; explain the boundary for a larger project. A clean
+recommend a scope around the next intended change, including dependencies and
+boundary cases; ask only about unresolved choices. A small project may fit one
+pass; defer unrelated areas. A clean
 checkout uses in-place recovery by default. If local work exists, offer isolated
 recovery and ask whether that work should be included when the intent is unclear.
 Combine unresolved choices into a short exchange and continue independent

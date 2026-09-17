@@ -1,10 +1,30 @@
 """Human-readable check evidence, rendered without another check or agent pass."""
 
 from html import escape
+from os.path import commonprefix
 
 
 def code(value):
     return "<code>" + escape(" ".join(str(value).split())).replace("|", "&#124;") + "</code>"
+
+
+def description_excerpts(before, after):
+    """Bound the display around the first text difference; preserve full records elsewhere."""
+    descriptions = []
+    for item in (before, after):
+        value = item["content"].get("description", "") if item else ""
+        if not isinstance(value, str):
+            value = "See review.json for the structured description."
+        descriptions.append(" ".join(value.split()))
+    start = 0
+    if before and after and descriptions[0] != descriptions[1]:
+        start = max(0, len(commonprefix(descriptions)) - 60)
+    return [
+        ("…" if start else "")
+        + text[start : start + 240]
+        + ("…" if len(text) > start + 240 else "")
+        for text in descriptions
+    ]
 
 
 def render_summary(evidence, changed, artifacts):
@@ -56,19 +76,29 @@ def render_summary(evidence, changed, artifacts):
         if specifications:
             lines += [
                 "",
-                "| Change | Baseline item and location | Candidate item and location |",
+                "| Change | Before: item, location, description excerpt | After: item, location, description excerpt |",
                 "| --- | --- | --- |",
             ]
             for change in specifications[:20]:
                 before, after = change["before"], change["after"]
                 action = "Added" if before is None else "Removed" if after is None else "Modified"
+                descriptions = description_excerpts(before, after)
                 locations = [
-                    code(item["id"]) + " at " + code(f"{item['path']}:{item['line']}")
+                    code(item["id"])
+                    + " at "
+                    + code(f"{item['path']}:{item['line']}")
+                    + "<br>"
+                    + code(description or "(no description recorded)")
                     if item
                     else "—"
-                    for item in (before, after)
+                    for item, description in zip((before, after), descriptions)
                 ]
                 lines.append(f"| {action} | {' | '.join(locations)} |")
+            lines += [
+                "",
+                "Description excerpts may omit later differences and metadata changes. "
+                "Use the full records below for review; these excerpts do not infer intent or approval.",
+            ]
         if files:
             lines += ["", "Changed specification/test paths:", ""]
             lines += ["- " + code(item["path"]) for item in files[:20]]
