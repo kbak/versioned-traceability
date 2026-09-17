@@ -193,6 +193,13 @@ candidate. The configured tests already run as part of that check.
 
 ## Read the result
 
+Open `summary.md` in the printed evidence directory for a human-readable overview:
+changed specification IDs and locations, recorded checks, skipped or unobserved
+linked tests when execution links are enabled, and the exact source/policy digests.
+It links to the complete records and preserves pending review and evidence limits.
+The checker renders it from results already collected; it runs no additional tests,
+OFT commands, or agents. Default CLI output is unchanged.
+
 To explain one artifact from a saved check, use its complete OFT ID:
 
 ```sh

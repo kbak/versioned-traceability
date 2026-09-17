@@ -12,6 +12,7 @@ from .execution import collect_execution_links, retained_execution_links
 from .oft import OFT_SHA256, OFT_VERSION, policy_diagnostics, trace, validate_jar
 from .review import changes, review_diff, review_record, revision_diagnostics
 from .snapshot import changed_source, repository, resolve_commit, snapshot
+from .summary import render_summary
 from .testing import counts_pass, execute_tests, junit_counts, merge_reports
 
 
@@ -54,6 +55,7 @@ def check(
             "Source identity excludes ignored untracked files, Git metadata, external dependencies, and environment inputs.",
         ],
     }
+    changed = None
     try:
         repo = repository(repo_path)
         base_ref = resolve_commit(repo, base_ref)
@@ -155,6 +157,9 @@ def check(
             out / "test-result.json",
             test_statement(evidence, digest((out / "scope.json").read_bytes())),
         )
+    (out / "summary.md").write_text(
+        render_summary(evidence, changed, {path.name for path in out.iterdir()})
+    )
     evidence["artifacts"] = {
         path.name: digest(path.read_bytes()) for path in sorted(out.iterdir()) if path.is_file()
     }
