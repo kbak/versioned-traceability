@@ -132,6 +132,24 @@ def collect_execution_links(path, items, scope):
     }
 
 
+def required_execution_diagnostics(links, scope):
+    """Require passing observations for named identities in trusted scope policy."""
+    diagnostics = []
+    for key in scope["tests"].get("execution_links", {}).get("required_artifacts", []):
+        matches = [item for item in links["artifacts"] if item["id"].rsplit("~", 1)[0] == key]
+        if len(matches) != 1:
+            diagnostics.append(
+                f"Required execution artifact {key}: expected exactly one imported revision "
+                f"within selected artifact types and test_paths; found {len(matches)}"
+            )
+        elif matches[0]["status"] != "passed":
+            diagnostics.append(
+                f"Required execution artifact {matches[0]['id']}: "
+                f"expected passed observations; got {matches[0]['status']}"
+            )
+    return diagnostics
+
+
 def retained_execution_links(evidence, directory, scope):
     """Recompute retained links so readers do not trust a supplied summary."""
     tests = evidence["tests"]

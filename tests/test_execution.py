@@ -12,12 +12,17 @@ from test_workflow import WorkflowFixture
 from versioned_traceability.common import CheckError, read_json, write_json
 from versioned_traceability.config import validate_scope
 from versioned_traceability.evidence import statement
-from versioned_traceability.execution import collect_execution_links, explain_execution
+from versioned_traceability.execution import (
+    collect_execution_links,
+    explain_execution,
+    required_execution_diagnostics,
+)
 from versioned_traceability.explain import explain
 from versioned_traceability.runner import verify
 
 REQ = "req~session-expiration~1"
 TEST = "utest~expiration-boundary~1"
+TEST_KEY = "utest~expiration-boundary"
 OPTIONS = {"format": "junit-properties-v1", "artifact_types": ["utest"]}
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 
@@ -162,6 +167,80 @@ class ExecutionReportTests(unittest.TestCase):
         with self.assertRaises(CheckError):
             validate_scope(scope)
 
+    def test_required_artifact_configuration_uses_unique_selected_named_keys(self):
+        for value in (
+            [],
+            False,
+            TEST_KEY,
+            [TEST_KEY, TEST_KEY],
+            [TEST],
+            ["req~session-expiration"],
+            ["utest~"],
+            [None],
+            [{}],
+        ):
+            with (
+                self.subTest(value=value),
+                self.assertRaisesRegex(CheckError, "required_artifacts"),
+            ):
+                scope = copy.deepcopy(self.scope)
+                scope["tests"]["execution_links"]["required_artifacts"] = value
+                validate_scope(scope)
+        self.scope["tests"]["execution_links"]["required_artifacts"] = [TEST_KEY]
+        self.assertEqual(validate_scope(self.scope), self.scope)
+
+    def test_required_execution_rejects_nonpassing_observations(self):
+        self.scope["tests"]["execution_links"]["required_artifacts"] = [TEST_KEY]
+        for cases, status in (
+            ([self.case(identifier=None)], "not_observed"),
+            ([self.case(result="<skipped/>")], "skipped"),
+            ([self.case(result="<failure/>")], "failed"),
+            ([self.case(), self.case()], "ambiguous"),
+            ([self.case(result="<flakyFailure/>")], "ambiguous"),
+            ([self.case("one"), self.case("two", result="<skipped/>")], "mixed"),
+        ):
+            with self.subTest(status=status):
+                problems = required_execution_diagnostics(self.parse(*cases), self.scope)
+                self.assertEqual(len(problems), 1)
+                self.assertIn(TEST, problems[0])
+                self.assertIn(status, problems[0])
+        self.assertEqual(required_execution_diagnostics(self.parse(self.case()), self.scope), [])
+
+    def test_required_identity_follows_one_revision_but_rejects_missing_or_multiple(self):
+        self.scope["tests"]["execution_links"]["required_artifacts"] = [TEST_KEY]
+        revised = TEST_KEY + "~2"
+        self.items[0]["id"] = revised
+        self.assertEqual(
+            required_execution_diagnostics(self.parse(self.case(identifier=revised)), self.scope),
+            [],
+        )
+        self.items.append({"id": TEST, "type": "utest", "path": "tests/test_session.py"})
+        problems = required_execution_diagnostics(
+            self.parse(self.case("old"), self.case("new", identifier=revised)), self.scope
+        )
+        self.assertIn("found 2", problems[0])
+        for path in ("other.py", "tests/test_session.py"):
+            with self.subTest(path=path):
+                self.items = [
+                    {
+                        "id": TEST if path == "other.py" else "utest~optional~1",
+                        "type": "utest",
+                        "path": path,
+                    }
+                ]
+                problems = required_execution_diagnostics(
+                    self.parse(self.case(identifier=None)), self.scope
+                )
+                self.assertIn("found 0", problems[0])
+
+    def test_optional_artifacts_do_not_need_passing_observations(self):
+        self.scope["tests"]["execution_links"]["required_artifacts"] = [TEST_KEY]
+        self.items.append(
+            {"id": "utest~optional~1", "type": "utest", "path": "tests/test_session.py"}
+        )
+        links = self.parse(self.case(), self.case("optional", "utest~optional~1", "<skipped/>"))
+        self.assertEqual(required_execution_diagnostics(links, self.scope), [])
+
 
 class ExecutionWorkflowTests(WorkflowFixture):
     def setUp(self):
@@ -224,6 +303,70 @@ class ExecutionWorkflowTests(WorkflowFixture):
         self.assertEqual(result["tests"]["status"], "passed")
         self.assertEqual(self.explained()["linked_test_execution"], "not_observed")
         self.assertEqual(self.verified()["status"], "matched")
+
+    def require_boundary(self):
+        self.configure(
+            lambda scope: scope["tests"]["execution_links"].update(required_artifacts=[TEST_KEY])
+        )
+
+    def test_required_execution_passes_and_tracks_revised_test(self):
+        self.require_boundary()
+        self.replace("tests/test_session.py", TEST, TEST_KEY + "~2")
+        result = self.run_check()
+        self.assertEqual(result["status"], "review_required", result["diagnostics"])
+        self.assertEqual(self.verified()["status"], "matched")
+        self.assertEqual(self.explained()["linked_tests"][0]["id"], TEST_KEY + "~2")
+
+    def test_missing_required_execution_cannot_be_waived_by_candidate_scope(self):
+        self.require_boundary()
+        write_json(self.repo / "scope.json", read_json(self.scope))
+        self.commit()
+        self.base = self.git("rev-parse", "HEAD").strip()
+        self.replace("tests/test_session.py", "test_expiration_boundary", "omitted_boundary")
+        self.add_other_test()
+        candidate_scope = read_json(self.repo / "scope.json")
+        del candidate_scope["tests"]["execution_links"]["required_artifacts"]
+        write_json(self.repo / "scope.json", candidate_scope)
+        result = self.run_check(scope_path=None)
+        self.assertEqual(result["tests"]["status"], "passed")
+        self.assertEqual(result["status"], "rejected")
+        self.assert_problem(result, "got not_observed")
+
+    def test_deleting_required_declaration_does_not_remove_execution_obligation(self):
+        self.require_boundary()
+        self.replace("tests/test_session.py", f"# [{TEST}->", "# [utest->")
+        self.replace("tests/test_session.py", f'    test_expiration_boundary.oft_id = "{TEST}"', "")
+        result = self.run_check()
+        self.assertEqual(result["tests"]["status"], "passed")
+        self.assertEqual(result["trace"]["candidate"]["status"], "passed")
+        self.assertEqual(result["status"], "rejected")
+        self.assert_problem(result, f"Required execution artifact {TEST_KEY}")
+
+    def test_required_skip_rejects_even_when_suite_policy_allows_skips(self):
+        self.require_boundary()
+        self.replace(
+            "tests/test_session.py",
+            "    def test_expiration_boundary",
+            '    @unittest.skip("not executed")\n    def test_expiration_boundary',
+        )
+        self.add_other_test()
+        result = self.run_check()
+        self.assertEqual(result["tests"]["status"], "passed")
+        self.assertEqual(result["status"], "rejected")
+        self.assert_problem(result, "got skipped")
+
+    def test_verify_rechecks_required_execution_after_top_level_outcome_is_forged(self):
+        self.require_boundary()
+        self.replace("tests/test_session.py", "test_expiration_boundary", "omitted_boundary")
+        self.add_other_test()
+        self.commit()
+        self.base = self.git("rev-parse", "HEAD").strip()
+        result = self.run_check()
+        self.assertEqual(result["status"], "rejected")
+        result.update(status="passed", diagnostics=[])
+        write_json(self.out / "evidence.json", statement(result))
+        with self.assertRaisesRegex(CheckError, "Retained evidence fails required execution"):
+            self.verified()
 
     def test_skipped_linked_test_is_visible_when_suite_passes(self):
         self.replace(
@@ -355,6 +498,16 @@ class PytestExecutionTests(WorkflowFixture):
         self.assertEqual(
             result["tests"]["execution_links"]["artifacts"][0]["status"], "not_observed"
         )
+
+    def test_required_real_pytest_deselection_is_rejected(self):
+        self.configure(
+            lambda scope: scope["tests"]["execution_links"].update(required_artifacts=[TEST_KEY])
+        )
+        self.configure(lambda scope: scope["tests"]["command"].extend(["-k", "test_smoke"]))
+        result = self.run_check()
+        self.assertEqual(result["tests"]["status"], "passed")
+        self.assertEqual(result["status"], "rejected")
+        self.assert_problem(result, "got not_observed")
 
     def test_real_pytest_skip_preserves_collection_metadata(self):
         self.replace(

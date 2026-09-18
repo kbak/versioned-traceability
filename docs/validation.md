@@ -15,12 +15,42 @@ Tests run OFT and example test commands in temporary Git repositories. A missing
 OFT JAR fails the suite. To use an existing JAR, set `VT_OFT_JAR` instead of running
 `vt install-oft`.
 
+The [CI workflow](../.github/workflows/ci.yml) builds the source distribution and
+then its wheel, installs the wheel, and runs packaged tests/fixtures from a
+separate working directory. It checks Python 3.11 and 3.12, packaged skill
+references, lint, and the three language examples. Example smoke checks require
+passing behavior, rejection of a deliberate boundary defect, and passing
+restoration; their native logs and evidence are retained as artifacts.
+JavaScript dependencies and OFT downloads require network access. QuickCheck is
+provisioned only in its dedicated disposable runner.
+
+The [controlled evaluation](../.github/workflows/property-evaluation.yml) is a
+separate manually dispatched workflow. It runs the six fixed fault experiments;
+it does not add them to every pull request's normal test budget.
+
 Execution-link tests exercise the existing session fixture and a real pytest
 producer. They cover parameterized cases, deselection, skips, expected failures,
 setup errors, invalid IDs/revisions, duplicate identities, unsupported retry
 extensions, source mutation, and altered retained summaries. A passing suite
-with an omitted linked test must report `not_observed`. The `test` extra installs
-pytest only for development; it is not a vt runtime dependency.
+with an omitted linked test must report `not_observed`. Opt-in required-execution
+tests cover rejection, deletion, skip policy, revision continuity, candidate
+policy edits, and independent enforcement when verifying retained evidence.
+The `test` extra installs
+pytest and Hypothesis for development; neither is a vt runtime dependency.
+
+`tests/test_report_properties.py` exercises report outcome preservation, completion
+policy, suite-level failures after merging, and rejection of missing test cases.
+These bounded Hypothesis searches also run under unittest. For native search
+statistics, run `python -m pytest tests/test_report_properties.py --hypothesis-show-statistics`.
+The [manual lifecycle pilot](manual-property-pilot.md) records recovery, strengthening,
+evolution, mutation detection, and the remaining review/completeness limits.
+
+[Snapshot/revision/lifecycle properties](property-evaluation.md) extend these
+checks to source identity, requirement review and saved-evidence freshness.
+The lifecycle state machine uses real Git/OFT and a reference map of file bytes
+and modes. All eight added checks run in the ordinary suite. The optional
+`scripts/evaluate_properties.py` experiment evaluates six fixed faults in disposable
+copies and preserves native results; it does not run during normal test discovery.
 
 Recovery tests start with an unannotated project, exercise citation and editing
 checks, run real OFT/test validation, apply the proposed patch in the fixture,

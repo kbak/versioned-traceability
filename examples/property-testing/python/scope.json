@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "name": "hypothesis-expiration",
+  "inputs": ["requirements.md", "session.py", "test_session.py", "conftest.py", "pytest.ini", "requirements.txt"],
+  "specification_paths": ["requirements.md"],
+  "test_paths": ["test_session.py", "conftest.py", "pytest.ini", "requirements.txt"],
+  "required_coverage": {"req": ["impl", "utest"]},
+  "policy": {"allow_skipped_tests": false},
+  "tests": {
+    "command": ["python", "-m", "pytest", "--hypothesis-show-statistics", "--junitxml=test-results.xml"],
+    "format": "junit",
+    "report": "test-results.xml",
+    "timeout_seconds": 30,
+    "execution_links": {
+      "format": "junit-properties-v1",
+      "artifact_types": ["utest"],
+      "required_artifacts": ["utest~expiration-boundary", "utest~expiration-shift"]
+    }
+  }
+}

@@ -158,6 +158,14 @@ class RecoveryTests(RecoveryFixture):
             .read_text(encoding="utf-8")
         )
         self.assertIn(semantics, (self.bundle / "instructions.md").read_text(encoding="utf-8"))
+        property_directory = files("versioned_traceability") / "skills/property-testing"
+        instructions = (self.bundle / "instructions.md").read_text(encoding="utf-8")
+        self.assertEqual(
+            instructions.count((property_directory / "SKILL.md").read_text(encoding="utf-8")),
+            1,
+        )
+        for reference in (property_directory / "references").iterdir():
+            self.assertNotIn(reference.read_text(encoding="utf-8"), instructions)
 
     def test_real_baseline_recovery_patch_and_adoption_then_normal_development(self):
         self.draft()

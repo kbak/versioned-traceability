@@ -1,6 +1,6 @@
 ---
 name: recover-baseline
-description: Guide baseline recovery for an existing repository, from choosing scope and preparing a draft to recovering OpenFastTrace requirements, source/test links, and evidence for review.
+description: Guide baseline recovery for an existing repository, including OpenFastTrace requirements, existing properties, source/test links, and a prioritized property-strengthening handoff for review.
 ---
 
 Use the shared [semantic contract](../versioned-traceability/references/semantics.md)
@@ -99,6 +99,21 @@ look especially for boundary/negative cases, retry and lifecycle behavior, and
 contradictions with the first pass. Relevant regression assertions can reveal
 promises missing from the docs. Record remaining uncertainty instead of estimating
 a percentage recovered.
+
+In that same pass, inspect existing invariants and executable properties for the
+selected capabilities. Reuse their identities, assertions and generators; record
+what they actually check and their domain/assumptions. Identify a few useful
+missing properties from the requirements, prioritizing critical logic and known
+gaps. Keep these in the existing capability table or claim notes, with linked
+requirement IDs, documented/inferred origin, available checks, and the next action.
+Uncertain intent belongs in open_issues. A candidate property is a proposal;
+current code or a passing test cannot establish that it is an accepted promise.
+
+Use the [property-testing workflow](../property-testing/SKILL.md), or its inline
+copy, for this discovery and handoff. During recovery, preserve executable tests,
+generators, dependencies and runner configuration. Do not install a new testing
+library or generate tests as part of the recovery proposal. The shared workflow's
+authoring steps apply after adoption, in the strengthening task described below.
 
 Within that same short pass, try to disprove a few broad or uncertain requirements:
 what option, input, platform or interaction could make the sentence false? Use
@@ -211,6 +226,16 @@ baseline before normal development begins. Committing a draft alone does not
 establish acceptance or activate a development policy.
 As part of authorized adoption, explicitly set `Status: approved` only for the
 items accepted through that review. Preserve their documented/inferred origin.
+
+Hand off the prioritized properties, linked IDs and revisions, domains and
+assumptions, existing test locations, missing checks, and unresolved intent in the
+same maintained Markdown. After the caller adopts the baseline, use the
+property-testing workflow for authorized strengthening: reuse the project's
+library, add the selected checks, retain counterexamples, and run ordinary
+`vt check` against that adopted baseline. Honor an existing authorization to
+continue; ask only about unresolved intent or scope. A recovery-only task ends
+with this actionable handoff. Do not mix new test evidence into the historical
+recovery evidence or treat exit 4 as adoption.
 
 This workflow is informed by OpenFastTrace's reverse-specification procedure at
 4.9.0; the source and intentional differences are documented in the reference.

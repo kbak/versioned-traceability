@@ -1,0 +1,110 @@
+name: Release candidate checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  package-and-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      VT_OFT_JAR: ${{ github.workspace }}/.tools/openfasttrace-4.9.0.jar
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build wheel through sdist and install
+        run: |
+          python -m pip install build ruff==0.11.13
+          python -m build
+          python -m pip install dist/*.whl 'pytest>=8,<10' 'hypothesis>=6,<7'
+          vt install-oft --destination "$GITHUB_WORKSPACE/.tools"
+          mkdir "$RUNNER_TEMP/source"
+          tar -xzf dist/*.tar.gz --strip-components=1 -C "$RUNNER_TEMP/source"
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Test installed wheel using tests and fixtures from sdist
+        working-directory: ${{ runner.temp }}
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+        run: |
+          python -c 'from importlib.resources import files; p = files("versioned_traceability") / "skills/property-testing"; assert (p / "SKILL.md").is_file(); assert all((p / "references" / (n + ".md")).is_file() for n in ("python", "typescript", "haskell", "hegel"))'
+          python -m pytest -p hypothesispytest "$RUNNER_TEMP/source/tests" --junitxml="$RUNNER_TEMP/tests.xml" -q
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: package-and-tests-${{ matrix.python }}
+          path: |
+            dist/
+            ${{ runner.temp }}/tests.xml
+
+  property-examples:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      VT_OFT_JAR: ${{ github.workspace }}/.tools/openfasttrace-4.9.0.jar
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, typescript, haskell]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v7
+        if: matrix.language == 'typescript'
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Provision QuickCheck on the disposable runner
+        if: matrix.language == 'haskell'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y ghc libghc-quickcheck2-dev
+      - name: Build and install
+        run: |
+          python -m pip install build
+          python -m build
+          python -m pip install dist/*.whl
+          if [ '${{ matrix.language }}' = python ]; then
+            python -m pip install -r examples/property-testing/python/requirements.txt
+          fi
+          vt install-oft --destination "$GITHUB_WORKSPACE/.tools"
+          mkdir "$RUNNER_TEMP/source"
+          tar -xzf dist/*.tar.gz --strip-components=1 -C "$RUNNER_TEMP/source"
+      - name: Check passing, failing and restored examples from sdist
+        working-directory: ${{ runner.temp }}
+        run: python "$RUNNER_TEMP/source/scripts/check_property_examples.py" '${{ matrix.language }}' --out "$RUNNER_TEMP/example-results"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: property-example-${{ matrix.language }}
+          path: ${{ runner.temp }}/example-results/

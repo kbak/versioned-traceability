@@ -125,6 +125,13 @@ workflow needs no factory; shared CI checks can be added separately for PR enfor
 
 ## Check a change
 
+For stronger checks on selected behavior, use the optional
+[property-testing workflow](docs/property-testing.md). It derives executable
+properties from approved requirements with Hypothesis, fast-check, QuickCheck,
+or an existing project library. Tests run through the normal runner without an
+agent; no additional dependency is added to vt. Hegel is documented as an
+optional engine. Property-testing evidence remains distinct from proof.
+
 You work in **one checkout**. The tool reads commits from Git and makes temporary
 source snapshots automatically. Your working branch stays unchanged.
 
@@ -232,6 +239,9 @@ optional [execution-link profile](versioned_traceability/skills/versioned-tracea
 The [pytest example](examples/pytest-session) demonstrates explicit IDs,
 parameterized tests, and a collection hook. The existing JUnit parser is reused;
 pytest is a dependency of that example, not of the vt runtime.
+Optionally set `tests.execution_links.required_artifacts` to named OFT keys
+(for example, `["utest~expiration-boundary"]`) to reject missing, skipped or
+nonpassing required checks. Reports still use exact IDs and revisions.
 
 For `vt check`, the exit codes mean:
 

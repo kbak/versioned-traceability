@@ -1,0 +1,7 @@
+{
+  "name": "vt-property-testing-example",
+  "private": true,
+  "type": "module",
+  "scripts": {"test": "node --test session.test.js"},
+  "devDependencies": {"fast-check": "^4.3.0"}
+}

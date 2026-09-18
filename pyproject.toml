@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "versioned-traceability"
-version = "0.4.4"
+version = "0.4.5"
 description = "Git-native traceability checks and version-bound verification evidence"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = ["junitparser>=5.0.3,<6"]
 
 [project.optional-dependencies]
-test = ["pytest>=8,<10"]
+test = ["pytest>=8,<10", "hypothesis>=6,<7"]
 
 [project.scripts]
 vt = "versioned_traceability.cli:main"

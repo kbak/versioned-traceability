@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "name": "fast-check-expiration",
+  "inputs": ["requirements.md", "session.js", "session.test.js", "package.json", "package-lock.json", "test.sh"],
+  "specification_paths": ["requirements.md"],
+  "test_paths": ["session.test.js", "package.json", "package-lock.json", "test.sh"],
+  "required_coverage": {"req": ["impl", "utest"]},
+  "tests": {"format": "command", "command": ["sh", "test.sh"], "timeout_seconds": 120}
+}

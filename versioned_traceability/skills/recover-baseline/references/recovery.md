@@ -101,6 +101,26 @@ and outstanding clauses explicitly. Manual/provider obligations may use differen
 OFT artifact types and Needs; choose these during scope review without weakening
 existing obligations. An unperformed manual check remains an evidence gap.
 
+Include property discovery in this same bounded pass. Extend the capability table
+or claim notes rather than requiring a second inventory or a new schema. For
+example, an entry for `req~session-expiration~1` could say: "Documented timeout;
+existing equality test in tests/test_session.py; propose a monotonic-expiration
+property for nonnegative inactivity seconds; confirm the clock domain; add a
+property test after adoption." Distinguish existing executable checks from
+proposed checks, and documented intent from inferred behavior. Keep supporting
+citations and unresolved assumptions in the usual claims/open_issues records.
+Discovery neither runs a proposed check nor satisfies a missing coverage link.
+
+The handoff identifies requirement/property IDs, revisions and adoption status,
+relevant test and generator locations, domain/assumptions, missing checks and
+priority rationale. Reuse a precise requirement directly; create a separate
+draft property item only for a useful refinement. No testing dependency or
+executable test is added during recovery. After adoption, authorized strengthening
+uses the shared property-testing workflow and the project's normal development
+checker. Existing caller authorization can cover both phases; adoption still
+comes from the caller's review process. Unresolved intent remains a decision,
+and generated tests are never cited as original evidence.
+
 ## Bundle and proposed edits
 
 Preparation does not run a model or test command. In-place recovery requires a

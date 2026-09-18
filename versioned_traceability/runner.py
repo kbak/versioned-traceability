@@ -8,7 +8,11 @@ from . import __version__
 from .common import CheckError, canonical, digest, read_json, within, write_json, xml_tree
 from .config import load_baseline_scope, load_scope
 from .evidence import check_artifacts, read_statement, statement, test_statement
-from .execution import collect_execution_links, retained_execution_links
+from .execution import (
+    collect_execution_links,
+    required_execution_diagnostics,
+    retained_execution_links,
+)
 from .oft import OFT_SHA256, OFT_VERSION, policy_diagnostics, trace, validate_jar
 from .review import changes, review_diff, review_record, revision_diagnostics
 from .snapshot import changed_source, repository, resolve_commit, snapshot
@@ -134,6 +138,7 @@ def check(
                     links = collect_execution_links(out / "tests.xml", after, scope)
                     evidence["tests"]["execution_links"] = links
                     problems.extend(links["diagnostics"])
+                    problems.extend(required_execution_diagnostics(links, scope))
                 mutated = changed_source(candidate)
                 if mutated:
                     problems.append("Test command modified captured source: " + ", ".join(mutated))
@@ -253,6 +258,12 @@ def verify(
     links = retained_execution_links(evidence, directory, scope)
     if links is not None and links["status"] != "recorded":
         raise CheckError("Retained evidence contains invalid execution links")
+    if links is not None:
+        required_problems = required_execution_diagnostics(links, scope)
+        if required_problems:
+            raise CheckError(
+                "Retained evidence fails required execution: " + "; ".join(required_problems)
+            )
     if read_json(directory / "test-result.json") != test_statement(
         evidence, artifacts["scope.json"]
     ):

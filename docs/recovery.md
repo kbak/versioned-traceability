@@ -63,6 +63,26 @@ separate development work; recovery may reveal that they are needed. Incomplete
 recovery still reports its findings and gaps, but cannot establish a validated
 baseline.
 
+## Properties during onboarding
+
+Recovery inventories existing invariants and property tests within the selected
+scope, and proposes a few valuable missing checks. The same capability table or
+claim notes carry the handoff: linked IDs/revisions and adoption status,
+documented or inferred origin, domains and assumptions, existing test/generator
+locations, gaps, and priority rationale. No separate property catalog is required.
+Candidate checks provide no execution evidence; uncertain intent remains explicit.
+
+After adopting the baseline, an authorized strengthening task uses the shared
+[property-testing workflow](property-testing.md) to add selected executable
+checks through the existing runner and normal `vt check`. Existing authorization
+to complete onboarding can cover that continuation; a recovery-only request
+ends with the handoff. Recovery checks never accept the baseline automatically
+or permit new tests to be presented as original evidence.
+
+Subsequent development maintains affected properties with their requirements,
+implementation and generators. Reuse surviving identities, record legitimate
+changes of meaning, and retain useful counterexamples as regressions.
+
 ## Contract
 
 1. `vt recover` captures the original source snapshot, inventories selected files

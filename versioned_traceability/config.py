@@ -114,7 +114,8 @@ def validate_scope(scope):
         if (
             tests.get("format", "junit") != "junit"
             or not isinstance(links, dict)
-            or set(links) != {"format", "artifact_types"}
+            or {"format", "artifact_types"} - set(links)
+            or set(links) - {"format", "artifact_types", "required_artifacts"}
             or links["format"] != "junit-properties-v1"
             or not isinstance(links["artifact_types"], list)
             or not links["artifact_types"]
@@ -128,6 +129,23 @@ def validate_scope(scope):
                 "tests.execution_links requires JUnit, format junit-properties-v1, "
                 "and a nonempty unique artifact_types list"
             )
+        if "required_artifacts" in links:
+            required_artifacts = links["required_artifacts"]
+            if (
+                not isinstance(required_artifacts, list)
+                or not required_artifacts
+                or any(
+                    not isinstance(key, str)
+                    or not re.fullmatch(r"[A-Za-z]+~[A-Za-z0-9][A-Za-z0-9_.-]*", key)
+                    or key.split("~", 1)[0] not in links["artifact_types"]
+                    for key in required_artifacts
+                )
+                or len(set(required_artifacts)) != len(required_artifacts)
+            ):
+                raise CheckError(
+                    "tests.execution_links.required_artifacts must be a nonempty unique list "
+                    "of named OFT keys (type~name, without revisions) of selected artifact types"
+                )
     if type(tests["timeout_seconds"]) is not int or not 1 <= tests["timeout_seconds"] <= 86400:
         raise CheckError("tests.timeout_seconds must be between 1 and 86400")
     return scope

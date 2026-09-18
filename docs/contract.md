@@ -265,6 +265,17 @@ or inconsistent reports, and reports already present in the candidate. Entirely
 skipped or empty suites fail. `policy.allow_skipped_tests` defaults to true;
 false also rejects mixed passing/skipped suites. Suite-level errors fail.
 
+With the optional [execution-link profile](../versioned_traceability/skills/versioned-traceability/references/execution-links.md),
+`tests.execution_links.required_artifacts` can require passing observations for
+selected named OFT keys (`type~name`, without revisions). Each key must resolve
+to exactly one candidate revision inside the configured types and test paths.
+Missing declarations, unobserved/skipped checks, ambiguous or nonpassing outcomes
+reject the overall check. `verify` enforces the same rule against retained data.
+Omitting this field preserves diagnostic-only execution links. The gate cannot
+establish generator adequacy, parameter completeness or requirement satisfaction.
+The separate test-result attestation remains a suite result; a passing suite can
+coexist with a rejected check when a required artifact was not observed.
+
 ## Source identity
 
 The source digest is SHA-256 of canonical JSON containing sorted `{path, mode,
@@ -310,7 +321,8 @@ for configuration, evidence fields, supported outcomes and limitations.
 
 This adds no runtime dependency or default execution-completeness gate. Unknown
 IDs or invalid supplied metadata reject the check; missing observations remain
-visible. With the profile disabled, existing behavior and bundles remain valid.
+visible and reject the check when named in `required_artifacts`. With the profile
+disabled, existing behavior and bundles remain valid.
 
 ### Bundle contents
 

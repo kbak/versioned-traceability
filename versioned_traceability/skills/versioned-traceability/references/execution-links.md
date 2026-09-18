@@ -23,6 +23,40 @@ originate within `test_paths`. The scope is approved policy just as before.
 Omitting `execution_links` preserves the existing suite/command behavior,
 including for old evidence bundles. Enabling the profile requires a fresh check.
 
+## Require selected artifacts to pass
+
+Optionally add named OFT keys to the same configuration:
+
+```json
+"execution_links": {
+  "format": "junit-properties-v1",
+  "artifact_types": ["utest"],
+  "required_artifacts": ["utest~expiration-boundary"]
+}
+```
+
+Keys use `type~name` without a revision; the report still supplies the exact
+`type~name~revision`. Each required key must resolve to exactly one imported
+candidate artifact within the selected types and `test_paths`, and every
+reported case associated with it must pass. Missing declarations or observations,
+skips, failures, ambiguity, mixed outcomes and multiple imported revisions reject
+the overall check, even when its suite passes. An empty or duplicate required
+list, a revision-qualified key, or a type absent from `artifact_types` is invalid
+configuration. Omit the field to retain diagnostic-only behavior.
+
+Use explicit, stable named artifacts. A legitimate revision update keeps the
+required identity and uses the normal review process; the policy does not pin
+the old revision or approve new meaning. Deleting or renaming that identity
+requires updating the trusted policy. Candidate scope edits cannot disable a
+rule loaded from the baseline. Unlisted artifacts need not pass this additional
+gate, but ordinary suite, skip and metadata validation still apply.
+
+The evidence retains observations separately from policy diagnostics. `vt verify`
+recomputes associations and enforces required execution from the retained
+JUnit/OFT data and the supplied trusted scope. No new evidence format, dependency,
+or agent is needed. Old configurations and their evidence keep their behavior;
+enabling this field requires a fresh check and a checker supporting the field.
+
 ## Author and report an explicit link
 
 Give the OFT test marker an explicit name using its existing tag syntax:
@@ -119,12 +153,15 @@ be reconstructed from its final report. Only represented parameter cases are
 known; this profile cannot discover an omitted parameter or prove that every
 required scenario ran.
 
-Missing observations, skips and ambiguity do not add a new execution-completeness
-gate. Existing suite and skip policy still apply. Source changes or an incomplete
+By default, missing observations, skips and ambiguity are diagnostic. The optional
+`required_artifacts` gate rejects them for the named artifacts only. Existing suite
+and skip policy still apply. Source changes or an incomplete
 test command leave reported observations diagnostic; baseline explanations never
 reuse candidate executions. The separate in-toto test statement still summarizes
 the suite/command outcome and does not assert per-requirement verification.
 
 A passing suite with the boundary test deselected must show `not_observed` for
-that test artifact. Even a linked `passed` outcome establishes neither assertion
+that test artifact, and rejects the check when that artifact is required. The gate
+cannot detect an omitted parameter case, an insufficient search budget, a narrowed
+generator or a producer that falsely reports execution. Even a linked `passed` outcome establishes neither assertion
 adequacy nor requirement satisfaction, and does not fill structural graph gaps.

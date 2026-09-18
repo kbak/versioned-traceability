@@ -187,7 +187,12 @@ def prepare(repo_path, candidate_ref, inputs, out=None, *, isolated=False):
         + "\n\n"
         + files("versioned_traceability")
         .joinpath("skills/versioned-traceability/references/semantics.md")
-        .read_text(encoding="utf-8"),
+        .read_text(encoding="utf-8")
+        + '\n\n<skill-reference path="skills/property-testing/SKILL.md">\n'
+        + files("versioned_traceability")
+        .joinpath("skills/property-testing/SKILL.md")
+        .read_text(encoding="utf-8")
+        + "\n</skill-reference>",
         encoding="utf-8",
     )
     record = {

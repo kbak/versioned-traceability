@@ -36,6 +36,8 @@ This shares metadata and linked locations without rerunning tests. Use
 `--format json` for structured IDs or `--snapshot base` for historical items. Saved evidence
 does not establish current-source agreement or complete impact coverage. Follow
 indirect links as needed; query only to resolve gaps, not as a required final step.
+For a nondefault OFT installation, keep `VT_OFT_JAR` set or pass `--oft-jar`
+to `explain` as well as `check`; saved evidence does not configure the local JAR path.
 
 ## Implementation and review
 
@@ -44,6 +46,14 @@ and revision policy. Do not weaken promises or remove obligations to hide failur
 Keep prose and test edits visible. Authorized edits can proceed without another
 confirmation; conflicts with approved requirements need a decision through the
 caller's question or review process. Candidate approval files grant no authority.
+
+Follow affected obligations to existing properties and maintain their assertions,
+generators and assumptions with the change. For selected new checks or properties
+handed off from onboarding, use the matching packaged
+[property-testing skill](../property-testing/SKILL.md), or its supplied inline
+copy. It strengthens selected obligations with ordinary executable tests and
+uses the existing review/evidence flow; it does not require property tests for
+every change. Load only the applicable framework guide.
 
 Review the full candidate Git diff, including new files, and related unchanged
 promises, code and assertions. Compare their meaning: does the implementation
