@@ -134,6 +134,9 @@ reference. Hegel is an optional shared engine with language-specific bindings;
 its current beta/platform requirements are documented in the Hegel reference.
 There is no requirement to install every framework in a project or factory image.
 
+For Daml contracts, the [Daml guide](../versioned_traceability/skills/property-testing/references/daml.md)
+describes using generated inputs with Daml Script and recording ledger-test results.
+
 The [runnable examples](../examples/property-testing/README.md) use the same small
 expiration obligation in the three language environments. The Python example
 demonstrates individual OFT execution links; the other examples intentionally

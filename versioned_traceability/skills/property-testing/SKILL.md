@@ -51,6 +51,8 @@ behavior. Pair safety constraints with required successful behavior where releva
 Use the existing runner and one appropriate library. Read only the relevant guide:
 [Hypothesis](references/python.md), [fast-check](references/typescript.md),
 [QuickCheck](references/haskell.md), or [Hegel](references/hegel.md).
+For Daml contracts, read the [Daml guide](references/daml.md); Haskell's
+QuickCheck is not a drop-in Daml dependency.
 If an adapter supplied this text without the references, read the matching installed
 file with `importlib.resources.files("versioned_traceability")` under
 `skills/property-testing/references/`. No new agent service is needed.
