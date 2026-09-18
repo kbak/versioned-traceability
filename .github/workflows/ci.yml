@@ -1,4 +1,4 @@
-name: Release candidate checks
+name: Package and property checks
 
 on:
   push:

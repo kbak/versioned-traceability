@@ -1,7 +1,7 @@
-"""Run six fixed fault-injection experiments against disposable source copies.
+"""Check property-test sensitivity using six fixed source mutations.
 
-This is a small reproducible evaluation, not a mutation-testing framework or a
-coverage score. It never modifies the source repository or invokes a factory.
+Each mutation runs in a disposable source copy. The command fails if a mutation
+survives or its test cannot run; it never modifies the source repository.
 """
 
 import argparse

@@ -37,7 +37,7 @@ nonzero exit and the Python report must retain the corresponding `oft_id`.
 The translation property checks that shifting both timestamps preserves the
 decision. Neither sampled property constitutes an unbounded proof.
 
-For a repeatable acceptance smoke test, provision the dependencies above and
+To check an example and its failure handling, provision the dependencies above and
 vt/OFT, then run from the repository (or extracted source distribution):
 
 ```sh

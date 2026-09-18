@@ -1,6 +1,6 @@
-name: Controlled property evaluation
+name: Property mutation checks
 
-# Explicit experiment, separate from the normal suite and PR gate.
+# Run manually to check sensitivity to fixed source mutations.
 on:
   workflow_dispatch:
 

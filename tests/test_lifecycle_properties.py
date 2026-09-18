@@ -3,7 +3,7 @@
 The reference model stores raw bytes and executable bits, not vt digests. Search
 is bounded to a tiny valid project and sequential operations. No concurrency,
 external dependencies, malicious reporters or semantic requirement inference is
-modeled. Fixture revisions and acceptance are simulated, never project approval.
+modeled.
 """
 
 import os

@@ -49,8 +49,7 @@ Use native JUnit or command results through the existing scope. Python can also
 use the optional [execution-link profile](../versioned_traceability/skills/versioned-traceability/references/execution-links.md).
 One reported property case may execute many generated examples; the JUnit case
 count is not an input count or a proof count. Preserve native diagnostics, observed
-statistics when available, tool versions and replay details. No new evidence
-schema or core runtime dependency is required for the first workflow.
+statistics when available, tool versions and replay details.
 
 Scope assumptions, exclusions, generator distributions, and test budgets affect
 what was exercised. Review meaningful changes to them. A passing search does not
@@ -64,7 +63,7 @@ This detects absent artifacts, not missing generated inputs or weakened generato
 The [execution-link profile](../versioned_traceability/skills/versioned-traceability/references/execution-links.md#require-selected-artifacts-to-pass)
 defines the policy and its limits.
 
-## Initial libraries and reuse
+## Choosing a library
 
 Use Hypothesis for Python, fast-check for JS/TS, and QuickCheck for Haskell when
 the project has no established choice. Read only the corresponding skill
@@ -77,27 +76,9 @@ expiration obligation in the three language environments. The Python example
 demonstrates individual OFT execution links; the other examples intentionally
 use command-level evidence until a per-case metadata producer is validated.
 
-The workflow is informed by [Agentic PBT](https://github.com/mmaaz-git/agentic-pbt),
-the [Trail of Bits PBT skill](https://github.com/trailofbits/skills/tree/master/plugins/property-based-testing),
-and [PBT-Bench](https://github.com/ElliotXinqiWang/PBTbench). Their prompts and
-benchmark data are not vendored. Reuse library APIs and tools such as Hypothesis
-Ghostwriter or Schemathesis where their existing semantics fit the target.
+## Checking property quality
 
-Judge a pilot by defects detected, meaningful boundaries exercised, reproducible
-failures, maintenance effort and execution cost. Include a known defect or
-controlled mutation and correct behavior; preserve unsuccessful attempts rather
-than reporting only passing generated suites. No learned classifier is required;
-an optional classifier is useful only if it replaces measured expensive work.
-
-The [manual lifecycle pilot](manual-property-pilot.md) applies this workflow to
-vt's own JUnit processing in an isolated copy, without OpenHands or a factory.
-Its retained tests are part of the development suite.
-
-The subsequent [property evaluation](property-evaluation.md) adds snapshot and
-revision properties, a stateful evidence lifecycle, and a repeatable controlled
-fault experiment. It provides a concrete example of evaluating property quality
-without adding another framework or running the factory.
-
-The [first-iteration acceptance report](executable-properties-release.md) records
-package validation, all three language smoke tests, and a fresh-agent
-strengthening/evolution exercise, including the remaining support boundaries.
+Check that each property exercises the promised boundaries and detects a known
+defect or deliberate mutation. Preserve useful failing inputs as regression
+examples. Review generators, assumptions and budgets alongside assertions;
+passing execution alone does not establish that a property is adequate.

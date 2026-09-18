@@ -24,9 +24,8 @@ restoration; their native logs and evidence are retained as artifacts.
 JavaScript dependencies and OFT downloads require network access. QuickCheck is
 provisioned only in its dedicated disposable runner.
 
-The [controlled evaluation](../.github/workflows/property-evaluation.yml) is a
-separate manually dispatched workflow. It runs the six fixed fault experiments;
-it does not add them to every pull request's normal test budget.
+The [property mutation checks](../.github/workflows/property-evaluation.yml) run
+on manual dispatch, separately from the normal pull-request checks.
 
 Execution-link tests exercise the existing session fixture and a real pytest
 producer. They cover parameterized cases, deselection, skips, expected failures,
@@ -38,19 +37,10 @@ policy edits, and independent enforcement when verifying retained evidence.
 The `test` extra installs
 pytest and Hypothesis for development; neither is a vt runtime dependency.
 
-`tests/test_report_properties.py` exercises report outcome preservation, completion
-policy, suite-level failures after merging, and rejection of missing test cases.
-These bounded Hypothesis searches also run under unittest. For native search
-statistics, run `python -m pytest tests/test_report_properties.py --hypothesis-show-statistics`.
-The [manual lifecycle pilot](manual-property-pilot.md) records recovery, strengthening,
-evolution, mutation detection, and the remaining review/completeness limits.
-
-[Snapshot/revision/lifecycle properties](property-evaluation.md) extend these
-checks to source identity, requirement review and saved-evidence freshness.
-The lifecycle state machine uses real Git/OFT and a reference map of file bytes
-and modes. All eight added checks run in the ordinary suite. The optional
-`scripts/evaluate_properties.py` experiment evaluates six fixed faults in disposable
-copies and preserves native results; it does not run during normal test discovery.
+Hypothesis properties cover JUnit completion, source identity, requirement
+revisions and evidence freshness. They run under both unittest and pytest.
+See [property test maintenance](property-evaluation.md) for commands, search
+limits and mutation checks.
 
 Recovery tests start with an unannotated project, exercise citation and editing
 checks, run real OFT/test validation, apply the proposed patch in the fixture,
