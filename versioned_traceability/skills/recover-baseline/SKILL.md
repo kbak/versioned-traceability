@@ -1,18 +1,26 @@
 ---
 name: recover-baseline
-description: Guide baseline recovery for an existing repository, including OpenFastTrace requirements, existing properties, source/test links, and a prioritized property-strengthening handoff for review.
+description: Document an existing project's requirements, link them to code and tests with OpenFastTrace, and identify missing checks for review.
 ---
 
-Use the shared [semantic contract](../versioned-traceability/references/semantics.md)
+Document the promised behavior of an existing project using its documentation,
+code, and tests. Propose requirements and links, preserve the original behavior,
+and flag inferred intent and missing checks. The command and skill names call
+this *baseline recovery*: reconstructing requirements from existing sources.
+
+Use the shared [concepts and result meanings](../versioned-traceability/references/semantics.md)
 when interpreting recovered claims, identity mappings, and check results. Read
 it from the matching tool checkout or package; recovery bundles and injected
 agent contexts include the reference so no separate lookup is needed there.
 
-Use this for onboarding an existing project, including one with structured
-requirements that need reconciliation. A request such as "Recover this repository's baseline" is enough
-to start, including when the caller supplies only this skill's GitHub link.
+Use this for an existing project, including one whose structured requirements
+need reconciliation. A request such as "Document this feature's requirements and
+link them to the existing code and tests" is enough to start, including when the
+caller supplies only this skill's GitHub link.
 Guide the caller through the process; do not require a prepared bundle, installed
 tooling, CLI arguments, or knowledge of the artifact schema.
+
+## Set up the tools
 
 Identify and retain the target project's absolute path before acquiring tooling.
 If starting from a GitHub skill URL and a matching tool checkout is unavailable,
@@ -32,12 +40,14 @@ an unversioned skill copy is available, use upstream main and reread its complet
 guidance. Resolve relative references against the tool checkout, not the target
 project; an inline reference supplied by the adapter needs no separate download.
 
-Read the [setup and bundle contract](references/recovery.md), then install any
+Read the [setup and record format](references/recovery.md), then install any
 missing tooling in an isolated Python environment outside the target project.
 Follow that contract for prerequisites, revision matching and commands. Keep
 the target path explicit when running recovery after setup. This skill needs an
 agent with repository, shell and (when downloading) network access; if a capability
 is unavailable, explain the specific blocker and request only the missing access.
+
+## Choose the scope and preserve the original
 
 If no bundle was supplied, identify the repository from the workspace and inspect
 its documentation, source layout, test setup, and Git status. Ask for the repository
@@ -77,6 +87,8 @@ changes to the recorded checkout for normal Git review; isolated mode writes to
 the bundle's draft repository. Leave the current branch and HEAD unchanged and
 leave edits uncommitted. A working-tree diff is still a proposal, not acceptance.
 
+## Write requirements and identify missing checks
+
 Follow OFT's reverse-specification evidence order: user-facing documentation,
 existing specifications/design, tests, public entry points, then internal code
 and configuration. Extract meaningful observable behavior and constraints.
@@ -92,7 +104,7 @@ keep origin and disputes in their existing provenance records. Preserve the stat
 of unchanged existing items. Passing checks never promote draft items, and status
 must not be changed just to remove trace defects.
 
-Keep a small capability table in the proposed Markdown: recovered (IDs), deferred
+Keep a small feature table in the proposed Markdown: documented (IDs), deferred
 (reason/next step), or outside scope. Group by meaningful behavior, not every file
 or function; no new schema or exhaustive catalog is needed. In the omissions pass,
 look especially for boundary/negative cases, retry and lifecycle behavior, and
@@ -104,7 +116,7 @@ In that same pass, inspect existing invariants and executable properties for the
 selected capabilities. Reuse their identities, assertions and generators; record
 what they actually check and their domain/assumptions. Identify a few useful
 missing properties from the requirements, prioritizing critical logic and known
-gaps. Keep these in the existing capability table or claim notes, with linked
+gaps. Keep these in the existing feature table or claim notes, with linked
 requirement IDs, documented/inferred origin, available checks, and the next action.
 Uncertain intent belongs in open_issues. A candidate property is a proposal;
 current code or a passing test cannot establish that it is an accepted promise.
@@ -113,7 +125,7 @@ Use the [property-testing workflow](../property-testing/SKILL.md), or its inline
 copy, for this discovery and handoff. During recovery, preserve executable tests,
 generators, dependencies and runner configuration. Do not install a new testing
 library or generate tests as part of the recovery proposal. The shared workflow's
-authoring steps apply after adoption, in the strengthening task described below.
+authoring steps apply after adoption, when adding tests as described below.
 
 Within that same short pass, try to disprove a few broad or uncertain requirements:
 what option, input, platform or interaction could make the sentence false? Use
@@ -130,6 +142,8 @@ behavior. Keep partial evidence in claim notes and unresolved obligations in
 open_issues. Choose verification types appropriate to the promise: provider
 operations and device setup may need manual evidence rather than unit tests.
 Never invent a manual-verification marker without the corresponding artifact.
+
+## Record citations and requirement changes
 
 Read the bundle's original `source/` files for citations. Within selected Markdown
 specification paths, add native OFT IDs and `Needs:` metadata, reorganize or rewrite
@@ -178,6 +192,8 @@ record suites left unexecuted. Recovery does not add new test runners or tests.
 For missing behavior/tests, preserve the gap and report it. Bug repairs and new
 characterization tests are separate tasks, not recovery shortcuts.
 
+## Check and review the proposal
+
 Use `vt recover-check --preflight` after drafting to check edits, citations and
 OFT import/links before expensive tests. Exit 5 means preflight was otherwise clean
 but tests were not run; it is not passing validation. Fix inexpensive authoring
@@ -199,7 +215,7 @@ place it beside the actual empty-value path or assertion, or record missing supp
 Review the inserted comments, not the whole repository again; keep this within the
 same omissions/review pass and session budget.
 
-Present the result in plain language: the recovered capabilities and scope,
+Present the result in plain language: the features documented and the scope,
 documents added, rewritten, moved or removed, implementation/test files receiving coverage
 comments, and checks that passed or failed. Explain that behavior and test
 assertions are preserved; missing tests and bug fixes are follow-up work.
@@ -209,7 +225,7 @@ documentation-review.json alongside the diff. Accounting for existing IDs does
 not prove that every obligation in unstructured prose was recovered; state the
 remaining completeness uncertainty instead of claiming exhaustive extraction.
 Point to working-tree changes in in-place mode and the proposed patch in isolated
-mode. Start with the generated recovery-review.md, then link the capability table,
+mode. Start with the generated recovery-review.md, then link the feature table,
 requirements, provenance and validation results so the
 caller can inspect them without navigating JSON unaided. A partial recovery
 should still explain what was found and what prevents a validated baseline.
@@ -217,6 +233,8 @@ The report distinguishes proposal checks from tracing/tests. A useful partial
 proposal can finish this recovery task while still failing the development gate;
 review acceptance does not waive missing evidence. Retain the complete bundle
 and result directories with the review handoff; Git metadata is local, not pushed.
+
+## Commit reviewed requirements and add tests
 
 Leave adoption to the caller's existing review workflow. In-place edits already
 exist in the checkout; do not apply proposal.patch over them. For an isolated
@@ -230,11 +248,11 @@ items accepted through that review. Preserve their documented/inferred origin.
 Hand off the prioritized properties, linked IDs and revisions, domains and
 assumptions, existing test locations, missing checks, and unresolved intent in the
 same maintained Markdown. After the caller adopts the baseline, use the
-property-testing workflow for authorized strengthening: reuse the project's
+property-testing workflow to add the authorized tests: reuse the project's
 library, add the selected checks, retain counterexamples, and run ordinary
 `vt check` against that adopted baseline. Honor an existing authorization to
-continue; ask only about unresolved intent or scope. A recovery-only task ends
-with this actionable handoff. Do not mix new test evidence into the historical
+continue; ask only about unresolved intent or scope. A task limited to documenting the project ends
+with these findings and recommendations. Do not mix new test evidence into the historical
 recovery evidence or treat exit 4 as adoption.
 
 This workflow is informed by OpenFastTrace's reverse-specification procedure at

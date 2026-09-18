@@ -1,18 +1,17 @@
 # Versioned Traceability
 
-Versioned Traceability adds Git change tracking and test evidence to
-[OpenFastTrace (OFT)](https://github.com/itsallcode/openfasttrace). OFT defines how
-requirements and other artifacts are written, versioned, and linked, and checks
-whether their declared coverage is satisfied.
+Versioned Traceability checks requirement links, runs your project's tests, and
+records results tied to the source snapshot checked. It compares requirements
+and tests against a Git baseline to identify changes requiring review.
 
-This tool compares requirements and tests with a starting commit, runs your test
-command, and saves a report identifying the source contents checked.
+It uses [OpenFastTrace (OFT)](https://github.com/itsallcode/openfasttrace) to read
+requirements and references in Markdown and source files and check their declared
+traceability coverage. You can use it manually, with a coding agent, or in CI.
 
-## What you put in the repository
+## How it works
 
-Use OFT's syntax to write requirements and link them to supporting artifacts.
-For example, a Markdown requirement can declare implementation and unit-test
-coverage:
+Keep requirements beside your code and tests. Give each requirement an OFT ID and
+reference that ID from the implementation and tests. For example:
 
 ```markdown
 ### Session expiration
@@ -24,22 +23,29 @@ Needs: impl, utest
 ```
 
 Here, `1` is the requirement's revision, and `Needs` asks for implementation and
-unit-test coverage. Add references beside the relevant code and test assertions:
+unit-test links. Add references beside the relevant code and test assertions:
 
 ```python
 # [impl->req~session-expiration~1]  # In the implementation
 # [utest->req~session-expiration~1] # In its test
 ```
 
-OFT checks that the required references exist and use the right revision.
-Your test command checks behavior. Review determines whether the requirements
-and assertions are adequate. Other artifact types and coverage chains are
-supported; see the [session example](examples/session) for complete files.
+OFT checks that the required links exist and reference the right revision. Your
+tests check behavior. Review determines whether the requirements and assertions
+are adequate. See the [session example](examples/session) for complete files.
 
-Read the [semantic contract](versioned_traceability/skills/versioned-traceability/references/semantics.md)
-for the shared human and agent meanings of coverage, artifact identity, claim
-origin, authorization, and execution evidence. It includes an example of
-explaining what a passing check establishes and what remains unverified.
+Each check uses three inputs:
+
+- **Baseline:** the Git commit used as the starting point for comparison.
+- **Candidate:** the source being checked, either a commit or your current files.
+- **Scope:** a JSON file selecting what to trace, the required coverage, and the
+  test command. The checker uses a trusted copy from the baseline or the caller.
+
+The tool checks links in both versions, runs the candidate's tests, and saves
+**evidence**: results, logs, source identities, and changes requiring review.
+Passing checks do not approve requirement changes or prove the software correct.
+The [concepts and result meanings](versioned_traceability/skills/versioned-traceability/references/semantics.md)
+explain these distinctions in detail.
 
 ## Install
 
@@ -54,223 +60,165 @@ vt install-oft
 The OFT installer downloads and checksum-verifies the configured release.
 For an existing JAR, set `VT_OFT_JAR` or pass `--oft-jar` to `vt check`.
 
-## Recover an existing project
+## Add traceability to an existing project
 
-Start with the capability you intend to change next, including its dependencies
-and boundary cases. You do not need to document the entire repository first.
-Recover and review that baseline, then grow coverage as later work needs it;
-scope changes still use the existing review process.
+Start with the behavior you intend to change next, including its dependencies and
+boundary cases. Use existing documentation, code, and tests to propose requirements
+and links. Review them before using them as the baseline for future changes.
 
-Give your coding agent the [recovery skill](versioned_traceability/skills/recover-baseline/SKILL.md)
-and ask: **"Recover this repository's baseline and guide me through it."** The
-agent inspects the project, helps choose scope, prepares the draft and runs checks.
-It presents proposed document/annotation changes, evidence and gaps for review.
-The skill also handles setup: an agent starting from its GitHub link fetches the
-matching tool revision when needed and installs it outside the target project.
-Existing matching local or packaged tooling can be reused. The agent needs shell
-access and network access for any missing downloads; no OpenHands installation is
-required for this standalone workflow.
+Give a coding agent the [existing-project skill](versioned_traceability/skills/recover-baseline/SKILL.md)
+and ask: **"Document this project's session expiration requirements and link them
+to the existing code and tests. Flag inferred behavior and missing checks."**
+The skill covers setup, drafting, checks, and review. It works with any coding
+agent that has shell access; missing tools may require network access.
 
-For manual preparation, start with a bounded recovery:
+For manual use, start in a clean project checkout:
 
 ```sh
-vt recover --repo /path/to/project
+vt recover
 ```
 
-The default requires a clean checkout at HEAD. It preserves an original snapshot
-in tool-managed Git storage and creates source/claims records under
-`.traceability/recovery/`. The author adds native OFT requirements and coverage
-comments directly to the checkout, proposes scope.json and records citations
-and open questions in the indicated claims.json. Changes are visible in Git and
-remain uncommitted. The original snapshot is retained throughout recovery.
+The command name calls this *baseline recovery*: reconstructing requirements from
+existing sources. It saves the original source and prepares citation records;
+it does not write requirements or run an agent. You then add requirements,
+code/test references, a proposed `scope.json`, and citations following the
+[existing-project guide](docs/recovery.md).
 
-The skill aims for a bounded first session: one extraction pass, one short
-omissions pass, and a capability table with deferred work. Run
-`vt recover-check --preflight` for feedback without executing tests; exit 5 means
-tests remain unrun. Each check writes `recovery-review.md` with the current gaps,
-diagnostics and artifact links. Both recovery modes retain their defaults under
-Git metadata; preserve those local bundles when sharing the review.
-
-Use `--isolated` to author in a separate draft and leave the original checkout
-unchanged. The tool prepares and validates the workflow; it does not call a model.
-The OpenHands adapter provides an agent example.
-
-Then validate the proposal:
+Check the proposal:
 
 ```sh
-vt recover-check --repo /path/to/project
+vt recover-check --preflight  # Check edits, citations, and links without tests
+vt recover-check            # Also run the existing tests
 ```
 
-This checks original source citations, permits reviewed documentation restructuring
-and coverage comments, and runs OFT plus the proposed test command. Exit 4 means
-the proposal passed automation and still needs baseline review. It never
-approves intent or commits the proposal. Inspect the Git changes, provenance,
-open questions and test results before adopting the proposed scope. See the
-[recovery guide](docs/recovery.md) for the complete experiment and adoption steps.
+Exit 5 from preflight means tests remain unrun. Exit 4 from the full check means
+automation passed and the proposal needs review. Read the generated
+`recovery-review.md`, resolve open questions, and commit the reviewed changes.
+Then validate that commit as described below.
 
-## Ongoing work with an agent
-
-After reviewing and committing the initial baseline, give your agent the
-[development skill](versioned_traceability/skills/versioned-traceability/SKILL.md)
-and the next task: **"Implement this change following the traceability skill."**
-It can fetch and install matching tooling when needed, use the project's committed
-scope and normal baseline defaults, follow requirement IDs through code/tests,
-and run checks. Review or discussion tasks can use the same skill without
-authorizing implementation. Ordinary feature work does not repeat baseline recovery.
-
-For future sessions, reference this skill in the target project's agent instructions
-(for example AGENTS.md), or supply the link with each task. Giving a link in one
-conversation does not automatically configure other agents or CI. A standalone
-workflow needs no factory; shared CI checks can be added separately for PR enforcement.
+The default leaves proposed edits uncommitted in your checkout. Use `--isolated`
+for a separate draft. Both modes retain originals and results under Git metadata;
+those local files are not included in a push. The guide explains how to retain
+and share them. Bug fixes and new tests follow review of the starting requirements.
 
 ## Check a change
 
-For stronger checks on selected behavior, use the optional
-[property-testing workflow](docs/property-testing.md). It derives executable
-properties from approved requirements with Hypothesis, fast-check, QuickCheck,
-or an existing project library. Tests run through the normal runner without an
-agent; no additional dependency is added to vt. Hegel is documented as an
-optional engine. Property-testing evidence remains distinct from proof.
-
-You work in **one checkout**. The tool reads commits from Git and makes temporary
-source snapshots automatically. Your working branch stays unchanged.
-
-`vt check` works without arguments once the project has a committed scope:
-
-| Argument | Default |
-| --- | --- |
-| `--repo` | The repository containing the current directory. |
-| `--base` | The common ancestor of your branch and the repository's default branch. |
-| `--candidate` | `worktree`: current files, including uncommitted changes. |
-| `--scope` | `scope.json` from the baseline commit. |
-| `--out` | A fresh temporary directory; the command prints the evidence path. |
-
-On a feature branch, the comparison includes your commits and local edits. On
-the default branch itself, the baseline is `HEAD`, so it checks local edits.
-Pass `--base COMMIT` to choose a different starting point, including when working
-from another feature or release branch. Default-branch detection uses local Git
-refs; see the [reference](docs/contract.md#commands) for details.
-
-### 1. Set up the scope
+### 1. Configure the project
 
 Copy [scope.json](examples/session/scope.json) and adapt its paths and test
-command to your project. Set `tests.format` to `junit` for JUnit XML, or
-`command` to use the command's exit status and log; omit `report` for the latter.
+command. Use `tests.format: "junit"` with a JUnit XML report, or `"command"` for
+the command's exit status and log; omit `report` for the latter.
 
-Choose where to maintain the scope:
+Commit the reviewed `scope.json` at the repository root with the starting
+requirements and references. Checks read this file from the baseline commit,
+so candidate edits cannot change their own checking rules. Alternatively, keep
+a trusted scope separately and pass `--scope /path/to/scope.json` to each command.
+Keep that copy outside the candidate's control.
 
-- **In the project:** commit the reviewed `scope.json` at the repository root
-  with the starting requirements, references, and tests. Checks read it from the
-  baseline commit, so working-copy edits cannot change their own checking rules.
-- **In separate configuration:** pass `--scope /path/to/trusted-scope.json`.
-  This suits callers that maintain checking policy separately from the project.
-  The file is read as-is; keep that approved copy outside the candidate's control.
+Tests run in a captured source directory without Git metadata or ignored local
+environments. Provide the test dependencies in the environment that runs the
+checker. Relative symlinks within the captured source are supported; submodules
+are rejected. See [source identity](docs/contract.md#source-identity) for details.
 
-Both setups support standalone checks. The test command's dependencies and
-environment must be available wherever the check runs. The examples below use
-the committed scope; add `--scope` to each command for a separate scope.
+### 2. Validate the starting commit
 
-### 2. Validate the starting commit once
-
-From your project's checkout:
+From the project's checkout:
 
 ```sh
 vt check --base HEAD --candidate HEAD
 ```
 
-Using the **same commit** for both flags checks that the starting requirements,
-references, and tests pass. Later checks trace both versions and run the
-candidate's tests.
+This checks links and tests in the same commit, establishing whether the starting
+point passes the configured checks.
 
-### 3. Check your edits
+### 3. Make changes and check them
 
-Edit your files normally, then run:
+Edit the project normally, then run:
 
 ```sh
 vt check
 ```
 
-Each run gets a new output directory. Use `--out ../check-1` to retain evidence
-outside temporary storage; the directory must be outside the repository and
-must not already exist. Recheck after edits: a previous report describes the
-earlier contents. The command prints the selected baseline commit as well as the
-evidence path, test counts, source stability, review status, and exact paths to
-retained reports. Failure details are excerpted; complete diagnostics and logs
-remain in the bundle. Start with this summary and open details as needed.
+The command uses these defaults:
 
-Review the full candidate Git diff and related behavior. `review.patch` selects
-specification/test changes; it does not replace a code review. After a small
-repair, review its delta and affected links, then rerun the check on the current
-candidate. The configured tests already run as part of that check.
+| Argument | Default |
+| --- | --- |
+| `--repo` | The repository containing the current directory. |
+| `--base` | The merge base of your branch and the default branch; `HEAD` on the default branch or with detached HEAD. |
+| `--candidate` | `worktree`: current source files, including uncommitted changes. |
+| `--scope` | Root `scope.json` from the baseline commit. |
+| `--out` | A fresh temporary directory; its path is printed. |
 
-## Read the result
+Pass `--base COMMIT` when you need a different starting point. Default-branch
+detection uses local Git refs; see the [command reference](docs/contract.md#check-and-verify-inputs).
+Your branch and working files remain unchanged by the check.
 
-Open `summary.md` in the printed evidence directory for a human-readable overview:
-added, removed and modified specification IDs, locations and before/after
-description excerpts, recorded checks, skipped or unobserved linked tests when
-execution links are enabled, and the exact source/policy digests.
-It links to the complete records and preserves pending review and evidence limits.
-The checker renders it from results already collected; it runs no additional tests,
-OFT commands, or agents. Default CLI output is unchanged.
+Each run writes a new evidence directory. To retain results outside temporary
+storage, use `--out /path/to/check-1`, choosing a new directory outside the project.
+Recheck after edits: saved results describe only the contents checked.
 
-To explain one artifact from a saved check, use its complete OFT ID:
+## Understand and review the result
+
+The command prints the outcome and evidence location. Open `summary.md` there for
+changed requirement IDs, test results, pending review, and links to full reports.
+
+| Exit from `vt check` | Meaning |
+| --- | --- |
+| 0 | Automated checks passed; no specification or test files changed. |
+| 4 | Automated checks passed; specification or test changes need review. |
+| 1, 2, 3 | Validation failed, could not run, or had an empty scope. |
+
+Review the full Git diff and related behavior. `review.patch` contains only
+specification/test changes and does not replace code review. Handle approval
+through your project's normal review process.
+
+To inspect a particular requirement and its immediate links in saved evidence:
 
 ```sh
 vt explain 'req~session-expiration~1' --evidence /path/to/check/evidence.json
 ```
 
-This shows OFT coverage and immediate links, the recorded test outcome, source
-and scope identity, and pending review. Add `--format json` for tools or agents,
-or `--snapshot base` for the baseline. It uses OFT's native XML graph report over
-the retained export; it does not need the original checkout or rerun tests.
-Exit 0 means the explanation was produced, even when the recorded check failed.
-See the [explanation reference](docs/contract.md#explain-saved-evidence) for limits.
+Supply several IDs to assemble their context together. Use `--format json` for
+tools or `--snapshot base` to inspect the baseline. This command reads saved
+results; it does not rerun tests or check current files. See the
+[explanation reference](docs/contract.md#explain-saved-evidence).
 
-Supply several complete IDs in one invocation to load the graph once and produce
-compact context: descriptions and links for each item, deduplicated linked
-locations, and shared evidence status. `--compact` selects this output for one
-ID too. This assembly is deterministic; callers still select relevant IDs and
-check for dependencies beyond their immediate links. No AI service is required.
-With multiple IDs or `--compact`, JSON contains `artifacts` plus shared metadata
-and `related` references. Existing single-ID JSON remains unchanged.
-
-To associate individual reported test outcomes with OFT artifacts, enable the
-optional [execution-link profile](versioned_traceability/skills/versioned-traceability/references/execution-links.md).
-The [pytest example](examples/pytest-session) demonstrates explicit IDs,
-parameterized tests, and a collection hook. The existing JUnit parser is reused;
-pytest is a dependency of that example, not of the vt runtime.
-Optionally set `tests.execution_links.required_artifacts` to named OFT keys
-(for example, `["utest~expiration-boundary"]`) to reject missing, skipped or
-nonpassing required checks. Reports still use exact IDs and revisions.
-
-For `vt check`, the exit codes mean:
-
-| Exit | Meaning |
-| --- | --- |
-| 0 | Automated checks passed; no specification or test files changed. |
-| 4 | Automated checks passed; requirement or test changes need review. |
-| 1, 2, 3 | Validation failed, could not run, or had an empty scope. |
-
-The output contains `evidence.json` with the outcome, trace and test logs,
-`review.patch` with requirement/test changes, and source manifests. Handle
-pending review in your existing review workflow; a check does not approve edits.
-
-To confirm that a later commit contains exactly the files already checked, use
-the evidence path printed by the check:
+To confirm that a later commit contains the source already checked:
 
 ```sh
 vt verify --candidate HEAD --evidence /path/to/check/evidence.json
 ```
 
-Verification uses the same defaults and matches contents without rerunning
-tests. If the baseline has moved, or you supplied `--base` or `--scope` for the
-check, supply the same baseline and scope here. For exit-4 evidence,
-`--allow-pending-review` permits matching while leaving review pending.
+Use the same baseline and scope as the original check; pass them explicitly if
+the defaults have changed. For exit-4 evidence, `--allow-pending-review` permits
+matching while leaving review pending. Verification does not rerun tests.
 
-Tests run in a snapshot that omits Git metadata and ignored local environments,
-preserves relative symlinks within the captured source, and rejects submodules.
-Use actual source paths for tracing and citations; link aliases are not imported
-again. Arrange test dependencies accordingly.
-See the [reference](docs/contract.md) for configuration, evidence, and limits;
-[test instructions](docs/validation.md); and the packaged
-[skill](versioned_traceability/skills/versioned-traceability/SKILL.md) for agents.
+## Work with an agent
+
+Once the starting requirements are reviewed and committed, give your agent the
+[development skill](versioned_traceability/skills/versioned-traceability/SKILL.md)
+and the task: **"Implement this change following the traceability skill."**
+The agent follows requirement links, maintains code and tests, and runs checks.
+Review and discussion tasks can use the same skill. Initial documentation does
+not need to be repeated for ordinary feature work.
+
+Reference the skill in your project's agent instructions, or provide its link
+with each task. Instructions guide agents; configure CI separately when checks
+must be enforced for pull requests. An OpenHands integration is available in
+[openhands-traceability](https://github.com/kbak/openhands-traceability).
+
+## Add property tests
+
+The [property-testing guide](docs/property-testing.md) explains how to turn selected
+requirements into executable assertions over generated inputs. Reuse the project's
+library, or use the examples for Hypothesis, fast-check, and QuickCheck. Tests run
+through the project's normal runner without an agent. Passing searches provide
+evidence about exercised inputs; they are not proofs.
+
+To link individual reported test outcomes to requirement coverage, use the optional
+[execution-link configuration](versioned_traceability/skills/versioned-traceability/references/execution-links.md)
+and [pytest example](examples/pytest-session). This can also require selected
+named tests to run and pass.
+
+See the [command and evidence reference](docs/contract.md) for configuration and
+limits, and [running the tests](docs/validation.md) for contributing to this tool.

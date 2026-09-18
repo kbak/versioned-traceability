@@ -1,4 +1,9 @@
-# Recovery bundle and authoring contract
+# Documenting an existing project: commands and record format
+
+The `recover` commands preserve an existing project's source while a human or
+agent documents its requirements and links them to code and tests. The output is
+a proposal for review. Here, a *bundle* is the directory containing the original
+source, inventory, instructions, and records used to check that proposal.
 
 ## Starting from a repository
 
@@ -75,15 +80,15 @@ remain supported, but check summaries warn about their retention. Git metadata
 does not travel with a clone or push: preserve the full original bundle and
 result directory using the caller's existing artifact storage when handing off.
 
-## Bounded discovery
+## Choose what to document
 
 Use one extraction pass and one short omissions pass, within the caller's budget.
 The default is a focused first session, not an exhaustive audit. Keep a small table
-in the recovered Markdown, for example:
+in the proposed Markdown, for example:
 
-| Capability | Recovery | Remaining work |
+| Feature | Documentation status | Remaining work |
 | --- | --- | --- |
-| Session expiry | Recovered: `req~session-expiration~1` | Boundary assertion linked; device behavior unexamined. |
+| Session expiry | Documented: `req~session-expiration~1` | Boundary assertion linked; device behavior unexamined. |
 | Concurrent renewal | Deferred | Existing regression identified; reconcile with the guide next. |
 | Billing | Outside scope | Separate subsystem. |
 
@@ -101,7 +106,7 @@ and outstanding clauses explicitly. Manual/provider obligations may use differen
 OFT artifact types and Needs; choose these during scope review without weakening
 existing obligations. An unperformed manual check remains an evidence gap.
 
-Include property discovery in this same bounded pass. Extend the capability table
+Include property discovery in this same bounded pass. Extend the feature table
 or claim notes rather than requiring a second inventory or a new schema. For
 example, an entry for `req~session-expiration~1` could say: "Documented timeout;
 existing equality test in tests/test_session.py; propose a monotonic-expiration
@@ -115,8 +120,8 @@ The handoff identifies requirement/property IDs, revisions and adoption status,
 relevant test and generator locations, domain/assumptions, missing checks and
 priority rationale. Reuse a precise requirement directly; create a separate
 draft property item only for a useful refinement. No testing dependency or
-executable test is added during recovery. After adoption, authorized strengthening
-uses the shared property-testing workflow and the project's normal development
+executable test is added during recovery. After requirements review, authorized test improvements
+use the shared property-testing workflow and the project's normal development
 checker. Existing caller authorization can cover both phases; adoption still
 comes from the caller's review process. Unresolved intent remains a decision,
 and generated tests are never cited as original evidence.
@@ -217,9 +222,9 @@ For example, adapt this scope to a Python project that already uses pytest:
 ```json
 {
   "schema_version": 1,
-  "name": "recovered-session",
-  "inputs": ["README.md", "docs/recovered.md", "src", "tests"],
-  "specification_paths": ["README.md", "docs/recovered.md"],
+  "name": "session",
+  "inputs": ["README.md", "docs/requirements.md", "src", "tests"],
+  "specification_paths": ["README.md", "docs/requirements.md"],
   "test_paths": ["tests"],
   "required_coverage": {"req": ["impl", "utest"]},
   "tests": {
@@ -244,7 +249,9 @@ relevant runners in the command, with a nonzero exit when any fails. A separate
 ad-hoc test run is not part of this evidence. Record unavailable suites as gaps;
 do not silently omit them or claim that suite success establishes each linked case.
 
-claims.json schema 1:
+## Record claims and source citations
+
+`claims.json` uses schema 1:
 
 ```json
 {
@@ -283,7 +290,8 @@ are preserved for review even when tracing and existing tests pass.
 For each substantively edited or deleted original specification document, add a
 document_changes entry. Metadata-only additions (IDs, Needs, Status: draft, blank separators)
 and coverage-comment edits do not require an entry. New documents obtain provenance
-through their claims. Both new lists are optional in schema 1 for compatibility;
+through their claims. The `document_changes` and `requirement_mappings` lists are optional in schema 1
+for compatibility;
 omission does not waive the requirements for restructuring or changed original IDs.
 
 ```json
@@ -332,6 +340,8 @@ block recovery: this mapping schema cannot distinguish their separate occurrence
 even if the proposed graph is valid. Report this limitation without changing the
 retained original or silently excluding the duplicates. Arbitrary non-OFT identifiers and completeness
 of unstructured prose require manual accounting and review.
+
+## Check the proposal and commit reviewed changes
 
 Run `vt recover-check --recovery /bundle --preflight` for inexpensive edit,
 citation and trace feedback before setting up/running costly suites. Clean

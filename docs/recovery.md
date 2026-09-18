@@ -1,18 +1,25 @@
-# Recover a baseline from an existing repository
+# Add traceability to an existing project
 
-Recovery prepares a proposed baseline from checked-in documentation, code and
-tests. Requirements remain native OpenFastTrace Markdown. Extraction is performed
-by a human or coding agent using the packaged recovery skill; the portable tool
-does not call an LLM or claim to infer product intent automatically.
+Use this workflow when a project already has code and tests but lacks usable
+requirements and links between them. Read the existing sources, document the
+promised behavior in OpenFastTrace (OFT) Markdown, and link it to the code and
+assertions that support it. Flag inferred intent, contradictions, and missing tests
+for review. Start with one feature or subsystem.
 
-Use the shared [semantic contract](../versioned_traceability/skills/versioned-traceability/references/semantics.md)
-to distinguish claim origin, authorization, and verification when reviewing a
-recovered baseline. The same reference is included in recovery instructions.
+The commands call this *baseline recovery*: reconstructing requirements from
+existing sources. A human or coding agent writes the proposed documentation.
+The tool preserves the original source, checks citations and allowed edits, and
+runs OFT and the existing tests. Once reviewed and committed, the documentation
+becomes a baseline for checking future changes.
+
+The [concepts and result meanings](../versioned_traceability/skills/versioned-traceability/references/semantics.md)
+explain how source citations, approval, and test results differ.
 
 ## Start with your coding agent
 
-Give the agent the [recovery skill](../versioned_traceability/skills/recover-baseline/SKILL.md)
-and ask: **"Recover this repository's baseline and guide me through it."**
+Give the agent the [existing-project skill](../versioned_traceability/skills/recover-baseline/SKILL.md)
+and ask: **"Document the requirements for this feature and link them to the
+existing code and tests. Flag inferred behavior and missing checks."**
 
 The agent inspects the repository, recommends an initial scope and asks about
 unresolved choices, such as which subsystem to start with or whether to include
@@ -20,32 +27,27 @@ local changes. It handles prerequisites, bundle preparation, drafting and checks
 You do not need to supply commands, output paths, or a scope.json yourself.
 Existing caller decisions are reused. The commands below also support manual use.
 
-For a large repository, start with the capability you will change next, its
-dependencies and boundary cases. For example: "Recover session expiration and
-logout; defer billing and notifications." Review and adopt that bounded baseline
-before changing behavior. Later work can extend coverage through the existing
-scope/review process; it need not repeat recovery for already adopted promises.
+For a large repository, start with the feature you will change next, its
+dependencies, and boundary cases. For example: "Document session expiration and
+logout; leave billing and notifications for later." Review that starting point
+before changing behavior. Later work can extend the scope through normal review;
+it need not repeat this process for requirements already reviewed.
 
-The default is one focused session: extract the main promises, make one short
-omissions pass through relevant regression tests and entry points, then hand off.
-A small Markdown table identifies recovered capabilities, deferred work and scope
-boundaries. There is no per-function catalog or completeness quota. Give the agent
-a time budget if useful; it should stop with a partial proposal when decisions,
+The default is one focused session: document the main requirements, then check
+relevant regression tests and entry points for omissions.
+A small Markdown table lists the features documented, open questions, and work
+left for later. Give the agent a time budget if useful; it should stop with a partial proposal when decisions,
 new tests or lengthy setup prevent further progress.
 
-A GitHub link to the skill is enough to start when the agent has shell access to
-the target project and network access for missing downloads. The skill directs it
-to fetch the tool repository/ref from that link, read the matching supporting
-reference and install tooling in an external Python environment. It retains the
-target project path so recovery is run against the intended project. Supplied
-local/package versions are reused rather than upgraded implicitly. The agent
-reports concrete access or prerequisite blockers when setup cannot proceed.
+The agent needs shell access to the project and network access for missing tools.
+It reuses the supplied tool version or installs the version matching the skill
+link in a separate environment. Setup instructions are included in the skill.
 
 ## What you receive
 
-By default, recovery leaves proposed changes in a clean Git checkout for review
-in your editor or normal PR workflow. The agent summarizes the changes and
-unresolved questions. An immutable original snapshot is retained separately in
+Preparation starts from a clean Git checkout. Proposed edits then appear as
+uncommitted changes for review in your editor or normal PR workflow. The agent
+summarizes the changes and unresolved questions. An immutable original snapshot is retained separately in
 both in-place and isolated modes; temporary drafting and validation directories
 remain available to the agent.
 
@@ -63,27 +65,26 @@ separate development work; recovery may reveal that they are needed. Incomplete
 recovery still reports its findings and gaps, but cannot establish a validated
 baseline.
 
-## Properties during onboarding
+## Identify properties and missing tests
 
-Recovery inventories existing invariants and property tests within the selected
-scope, and proposes a few valuable missing checks. The same capability table or
-claim notes carry the handoff: linked IDs/revisions and adoption status,
-documented or inferred origin, domains and assumptions, existing test/generator
-locations, gaps, and priority rationale. No separate property catalog is required.
-Candidate checks provide no execution evidence; uncertain intent remains explicit.
+While documenting the project, identify existing properties: rules intended to
+hold across a defined set of inputs or states. Record their requirement IDs,
+assumptions, existing tests, and missing checks in the same feature table or
+claim notes. Distinguish documented promises from inferred behavior and suggest
+which missing tests would be most valuable.
 
-After adopting the baseline, an authorized strengthening task uses the shared
-[property-testing workflow](property-testing.md) to add selected executable
-checks through the existing runner and normal `vt check`. Existing authorization
-to complete onboarding can cover that continuation; a recovery-only request
-ends with the handoff. Recovery checks never accept the baseline automatically
-or permit new tests to be presented as original evidence.
+Preserve existing tests during this step so they remain evidence of the original
+behavior. After the requirements are reviewed, use the
+[property-testing workflow](property-testing.md) to add selected checks through
+the project's runner and normal `vt check`. Continue when that test work is
+already authorized; a request limited to documenting the project ends with the
+proposal and recommendations. Proposed tests are not evidence of past execution.
 
 Subsequent development maintains affected properties with their requirements,
 implementation and generators. Reuse surviving identities, record legitimate
 changes of meaning, and retain useful counterexamples as regressions.
 
-## Contract
+## Workflow and responsibilities
 
 1. `vt recover` captures the original source snapshot, inventories selected files
    and creates reviewable provenance records. By default the current checkout is
@@ -99,14 +100,13 @@ changes of meaning, and retain useful counterexamples as regressions.
    explicit mappings for changed or removed requirements. It retains a proposed
    patch, source identities, documentation review, claims, and evidence.
 4. A maintainer reviews the proposed promises, links, scope, and open questions.
-   Successful automation always leaves recovery review pending. The caller
-   establishes a real repository baseline with
+   Passing automated checks still leave the proposal awaiting review. The caller
+   establishes a checked repository baseline with
    `vt check --base HEAD --candidate HEAD` after committing it.
 
-Scope selection, resolving contradictions, and accepting promises are operational
-decisions. Snapshotting, trace/test validation, citation validation, and retaining
-the proposal are reusable mechanisms supplied here. No factory-specific approval
-service or shared CI configuration is required.
+Use the project's normal review process to choose the scope, resolve contradictions,
+and accept requirements. The tool supplies the source records and automated checks;
+a factory or separate approval service is not required.
 
 Recovery follows the evidence order and contradiction handling in OFT's
 [reverse-specification skill at 4.9.0](https://github.com/itsallcode/openfasttrace/blob/4.9.0/.agents/skills/openfasttrace-reverse-specs/SKILL.md):
@@ -114,9 +114,10 @@ user-facing documentation, existing specifications/design, tests, public code,
 then internals/configuration. The bundled guidance adapts that procedure to a
 bounded scope without imposing arc42 or generating redundant design layers.
 
-## Run an experiment
+## Prepare and check the documentation manually
 
-Install the package and OFT using the README. From a clean local clone:
+Follow the [installation instructions](../README.md#install) for the package and
+OFT. From a clean local clone:
 
 ```sh
 vt recover
@@ -153,9 +154,9 @@ justify the cost.
 Start with the generated `recovery-review.md`. It separates proposal checks
 (source preservation, citations and original-ID accounting) from graph/test
 results, and links the detailed artifacts. A structurally incomplete proposal can
-still have valid provenance and be useful for review. Acceptance does not waive
-the ordinary development gate. Any policy for accepted verification debt requires
-an explicit caller decision; no implicit waivers are introduced here.
+still have valid citations and be useful for review. Accepting documentation does
+not bypass the configured checks for later development. Record missing evidence
+and resolve any changes to that policy through the project's review process.
 
 The active recovery is discovered from Git metadata, including in linked Git
 worktrees. Snapshots and raw logs are kept under the worktree's Git directory in
@@ -197,7 +198,7 @@ Open issues remain in provenance and their count is shown in the result. A green
 trace does not resolve an open question. Invalid proposals can retain partial
 artifacts; the current recovery-result.json status governs the whole invocation.
 
-## Restructure documentation without losing its evidence
+## Keep source citations when reorganizing documentation
 
 Selected, inventoried Markdown specification documents may change in the proposal;
 their originals stay in source/. Include both old and new locations in
@@ -211,7 +212,7 @@ original path, a summary, original source citations, and an author assessment of
 meaning: preserved, changed or uncertain. Adding IDs/Needs/Status: draft metadata or editing
 coverage comments alone does not require a document-change entry. New requirements
 still need their ordinary claim citations. The
-[authoring contract](../versioned_traceability/skills/recover-baseline/references/recovery.md)
+[record format reference](../versioned_traceability/skills/recover-baseline/references/recovery.md)
 contains the exact schema and examples; the recovery skill guides the agent through it.
 
 OFT imports the original inventoried specification documents independently of
@@ -244,7 +245,7 @@ retain their status. Promote accepted items to `Status: approved` only through
 the caller's review and adoption process, preserving their historical origin.
 The checker never interprets OFT item status or author notes as baseline acceptance.
 
-## Isolated drafting
+## Work in a separate draft
 
 Use an isolated draft when the current checkout has unfinished work or a separate
 workspace is preferred:
@@ -274,7 +275,7 @@ requirements. Patch applicability alone does not prove matching source; compare
 the recorded commit and any captured local changes with the target. Preserve the
 original snapshot and provenance when moving an isolated proposal.
 
-## Accept and continue development
+## Review, commit, and continue development
 
 In-place changes are already in the checkout; do not reapply proposal.patch.
 Review and resolve relevant scope/intent questions using the project's usual
@@ -292,12 +293,10 @@ Point the agent to the
 [development skill](../versioned_traceability/skills/versioned-traceability/SKILL.md)
 for those tasks. It handles standalone setup and the project's committed checking
 policy; retain its reference in the project's agent instructions for later sessions.
-This also avoids adding a second approval system: the caller records acceptance
-through its normal review process, and the portable tool supplies evidence.
 
-## First-version limits
+## Limits
 
-This version works from a local Git checkout, including a clone from GitHub.
+The workflow reads a local Git checkout, including a clone from GitHub.
 GitHub PRs/issues, external documents, historical intent reconstruction, and
 runtime production discovery are outside extraction scope. Git commit and file
 digests identify the evidence; source identity has the same exclusions as the

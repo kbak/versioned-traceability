@@ -2,7 +2,7 @@
 
 Scope schema 1 and evidence schema 2 are provisional and may change.
 
-The [semantic contract](../versioned_traceability/skills/versioned-traceability/references/semantics.md)
+The [concepts and result meanings](../versioned_traceability/skills/versioned-traceability/references/semantics.md)
 defines how humans and agents interpret the artifacts and results below,
 including which conclusions the evidence supports.
 
@@ -14,14 +14,16 @@ including which conclusions the evidence supports.
 | `vt check` | None | Traces both versions, runs candidate tests, and writes evidence. |
 | `vt verify` | `--evidence` | Matches saved evidence to the selected scope, base, and candidate. |
 | `vt explain` | Complete OFT item IDs and `--evidence` | Explains selected items from the retained OFT graph and check evidence. |
-| `vt recover` | None; defaults to current clean repository at HEAD | Preserves original source and prepares in-place recovery; `--isolated` creates a separate draft. No automatic extraction or tests. |
-| `vt recover-check` | None for an active in-place recovery; `--recovery` for an isolated bundle | Validates a proposed baseline; automation never grants adoption. |
+| `vt recover` | None; defaults to current clean repository at HEAD | Saves original source and prepares records for documenting existing requirements. `--isolated` creates a separate draft. No agent or tests run. |
+| `vt recover-check` | None for an active in-place recovery; `--recovery` for an isolated bundle | Checks proposed documentation, citations, links, and existing tests; review is still required. |
 
 `recover-check --preflight` validates edits, provenance and the OFT graph without
 running tests. An otherwise clean result is `incomplete` (exit 5), and `verify`
 rejects it even with `--allow-pending-review`.
 
-Recovery has its own [guide and provisional bundle schema](recovery.md).
+The command name `recover` refers to reconstructing requirements from existing
+sources. See [add traceability to an existing project](recovery.md) for that
+workflow and its record format.
 
 ### Explain saved evidence
 
@@ -280,7 +282,8 @@ coexist with a rejected check when a required artifact was not observed.
 
 The source digest is SHA-256 of canonical JSON containing sorted `{path, mode,
 sha256}` entries. JSON uses sorted keys, ASCII escaping, compact separators, and
-no trailing newline. Modes are `100644` or `100755`. The retained manifest
+no trailing newline. Modes are `100644` (regular file), `100755` (executable file), or `120000`
+(symlink). The retained manifest
 contains those exact bytes.
 
 Commit snapshots read Git blobs, unaffected by archive export attributes.
@@ -331,6 +334,7 @@ disabled, existing behavior and bundles remain valid.
 | `scope.json`, `base-manifest.json`, `candidate-manifest.json` | Checked scope and source identities. |
 | `base-items.xml`, `candidate-items.xml`, `*-import.log`, `*-trace.log` | OFT exports and execution logs. |
 | `review.json`, `review.patch` | Specification and test changes. |
+| `summary.md` | Human-readable results, changed items, and links to detailed records. |
 | `tests.log`, optional `tests.xml` | Command output and retained JUnit report. |
 | `evidence.json` | Check outcome, identities, tool versions, review state, diagnostics, and artifact hashes. |
 | `test-result.json` | Test attestation, emitted only when execution has a confirmed stable source. |

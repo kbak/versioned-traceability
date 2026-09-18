@@ -56,7 +56,7 @@ def default_base(repo):
 
 def parser():
     root = argparse.ArgumentParser(
-        description="Portable OFT tracing, change review, and test evidence"
+        description="Check requirement links and tests, compare Git versions, and save results"
     )
     root.add_argument("--version", action="version", version=__version__)
     commands = root.add_subparsers(dest="action", required=True)
@@ -76,7 +76,15 @@ def parser():
     explaining.add_argument("--java", default="java")
     install = commands.add_parser("install-oft", help="Download and checksum-verify OFT 4.9.0")
     install.add_argument("--destination", type=Path, default=default_jar().parent)
-    recovery = commands.add_parser("recover", help="Prepare baseline recovery in a clean checkout")
+    recovery = commands.add_parser(
+        "recover",
+        help="Prepare to document an existing project's requirements and links",
+        description=(
+            "Save the original source and prepare citation records for documenting existing "
+            "requirements and code/test links. A human or agent writes the proposal. "
+            "Starts from a clean checkout at HEAD unless --isolated is used."
+        ),
+    )
     recovery.add_argument(
         "--isolated",
         action="store_true",
@@ -94,26 +102,32 @@ def parser():
         "--input",
         action="append",
         dest="inputs",
-        help="Inventoried path; repeat for multiple paths (default: .)",
+        help="Repository-relative path to inspect; repeat for multiple paths (default: .)",
     )
     recovery.add_argument(
         "--out",
         type=Path,
-        help="New storage directory (default: Git recovery storage in either mode)",
+        help="New directory for originals and records (default: tool-managed Git metadata)",
     )
     recovering = commands.add_parser(
-        "recover-check", help="Validate a proposed baseline; always requires review"
+        "recover-check",
+        help="Check proposed requirements, citations, links, and existing tests",
+        description=(
+            "Check a documentation proposal prepared with recover. Passing checks leave "
+            "review pending (exit 4); --preflight skips tests and returns exit 5 when "
+            "the other checks pass."
+        ),
     )
     target = recovering.add_mutually_exclusive_group()
     target.add_argument(
         "--recovery",
         type=Path,
-        help="Directory produced by vt recover (required for isolated recovery)",
+        help="Directory produced by vt recover (required for a separate draft)",
     )
     target.add_argument(
         "--repo",
         type=Path,
-        help="Repository with an active in-place recovery (default: current repository)",
+        help="Checkout containing the documentation proposal (default: current repository)",
     )
     recovering.add_argument(
         "--scope", type=Path, help="Proposed scope (default: workspace/scope.json)"
@@ -126,11 +140,11 @@ def parser():
     recovering.add_argument(
         "--preflight",
         action="store_true",
-        help="Check edits, provenance and tracing without running tests (exit 5 if otherwise clean)",
+        help="Check edits, source citations, and links without tests (exit 5 if these checks pass)",
     )
     checking = commands.add_parser("check", help="Check changes against a Git baseline")
     verifying = commands.add_parser(
-        "verify", help="Match saved passing evidence to current contents"
+        "verify", help="Match saved check results to source contents without rerunning tests"
     )
     for command in (checking, verifying):
         command.add_argument(

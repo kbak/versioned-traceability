@@ -1,10 +1,10 @@
 # Property-testing examples
 
-Each directory is a standalone project with the same expiration promise. Install
+Each directory is a standalone project with the same session expiration requirement. Install
 only that project's test dependencies and run its normal command. The examples
 need no agent. The Python example additionally emits per-case OFT identities;
-the JS and Haskell examples record command-level evidence without pretending
-their native reporters implement the execution-link extension.
+the JS and Haskell examples record command-level evidence because their reporters do not emit
+OFT IDs for individual test cases.
 
 | Project | Setup | Run from that directory |
 | --- | --- | --- |

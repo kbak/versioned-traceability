@@ -1,9 +1,14 @@
 # Executable properties
 
-Use property tests to strengthen selected requirements with repeatable searches
-for counterexamples. Tests remain ordinary project source files and run without
-vt, OFT, an agent, or a factory. The project's runner supplies its own testing
-library; vt adds traceability and revision-bound evidence.
+A property states a rule that should hold across a defined set of inputs or
+states. For example, a session must be expired whenever its idle time is at least
+30 minutes. A property test generates inputs and searches for cases that violate
+the rule.
+
+Use property tests for selected requirements where broader input coverage is
+valuable. Keep the assertions and generators in the project's normal test suite.
+They run without vt, OFT, an agent, or a factory. Use OFT references to connect
+tests to requirements; vt records results tied to the checked source.
 
 Give an agent the packaged [property-testing skill](../versioned_traceability/skills/property-testing/SKILL.md),
 or follow it manually. For example: "Add property tests for these scheduling
@@ -11,27 +16,25 @@ requirements using the existing test workflow. Preserve their meaning and retain
 regression examples for any defects found." The skill reuses existing IDs and
 does not require another requirements document or approval stage.
 
-## Onboarding and evolution
+## When to add and update properties
 
-Both recovery bundles and OpenHands recovery contexts carry this workflow.
-Onboarding first discovers existing properties and candidate invariants, keeping
-their origins, domains, assumptions and missing checks in the existing capability
-table or claim notes. Recovery preserves executable tests and dependencies;
-proposed checks do not supply historical evidence or approval.
+When [documenting an existing project](recovery.md), identify existing properties
+and valuable missing checks. Record the source of each proposed rule, its input
+domain, assumptions, and existing tests in the requirements or claim notes.
+Preserve executable tests and dependencies during that initial documentation step.
 
-Once the caller has adopted the baseline, an authorized strengthening task takes
-the prioritized handoff and adds the selected checks. Use the project's ordinary
-runner and `vt check` against that baseline. Reuse existing authorization to
-continue rather than adding another approval stage; unresolved intent still
-needs the caller's decision. A request limited to recovery produces a handoff.
+After the starting requirements are reviewed, add selected property tests using
+the project's runner. Check the changes with `vt check` against that baseline.
+This can continue the same task when test work is already authorized; unresolved
+intent still needs a decision through the project's normal review process.
 
-During evolution, follow affected obligations and implementation to their
-properties. Maintain assertions, generators and assumptions; add checks for new
-obligations or gaps, and preserve counterexamples as regressions. Meaning changes
-use the existing revision and review policy. The tools deliver instructions and
-check evidence; they do not automatically generate properties without an author.
+When behavior changes, update affected assertions, generators, and assumptions.
+Add properties for new requirements or uncovered behavior, and keep useful
+counterexamples as regression tests. Changes to a requirement's meaning follow
+the existing revision and review policy. A human or agent writes these tests;
+the tools supply guidance and record check results.
 
-## Property, check, and evidence
+## Describe the property and link its tests
 
 Keep the promise separate from how it is checked. A precise existing requirement
 can be linked directly to a named test. When a derived property adds useful
@@ -46,7 +49,7 @@ Later runtime assertions, differential tests, schema checks, or symbolic analysi
 can target the same identity with their own methods and evidence limits.
 
 Use native JUnit or command results through the existing scope. Python can also
-use the optional [execution-link profile](../versioned_traceability/skills/versioned-traceability/references/execution-links.md).
+use the optional [per-test execution links](../versioned_traceability/skills/versioned-traceability/references/execution-links.md).
 One reported property case may execute many generated examples; the JUnit case
 count is not an input count or a proof count. Preserve native diagnostics, observed
 statistics when available, tool versions and replay details.
@@ -56,11 +59,12 @@ what was exercised. Review meaningful changes to them. A passing search does not
 establish a universal claim; an absent, skipped, invalid, or timed-out check does
 not become passing evidence. To require observations for critical checks,
 set `tests.execution_links.required_artifacts` to their named OFT keys, such as
-`["utest~expiration-boundary"]`. The gate requires one imported revision per key
-and passing observations for it; missing declarations, missing observations,
-skips and ambiguity reject the check. Other linked artifacts remain diagnostic.
-This detects absent artifacts, not missing generated inputs or weakened generators.
-The [execution-link profile](../versioned_traceability/skills/versioned-traceability/references/execution-links.md#require-selected-artifacts-to-pass)
+`["utest~expiration-boundary"]`. For each required key, the checker requires
+exactly one imported revision and reported passing results. Missing declarations or results, skips, and ambiguous
+revisions fail the check. Other linked test results are reported without this
+additional requirement. This detects absent artifacts; it cannot detect missing
+generated inputs or weakened generators.
+The [execution-link reference](../versioned_traceability/skills/versioned-traceability/references/execution-links.md#require-selected-artifacts-to-pass)
 defines the policy and its limits.
 
 ## Choosing a library

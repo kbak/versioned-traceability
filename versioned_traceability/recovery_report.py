@@ -1,4 +1,4 @@
-"""A small human handoff derived from the current recovery invocation."""
+"""Render the documentation proposal and its check results for review."""
 
 
 def render_review(result, checked, provenance):
@@ -6,20 +6,20 @@ def render_review(result, checked, provenance):
     trace = checked.get("trace", {}).get("candidate", {})
     items = provenance.get("items", [])
     lines = [
-        "# Recovery review",
+        "# Review the proposed requirements and links",
         "",
-        f"Result: **{result['status']}**. Baseline acceptance remains a separate review decision.",
+        f"Result: **{result['status']}**. Review the proposal before using it as the starting point for development.",
         "",
         "| Check | Result |",
         "| --- | --- |",
-        f"| Source preservation, citations and original-ID accounting | {result['proposal_checks']} |",
-        f"| Candidate OFT graph | {trace.get('status', 'not_run')} |",
+        f"| Original source preserved, citations valid, and requirement ID changes recorded | {result['proposal_checks']} |",
+        f"| Proposed requirement links (OFT) | {trace.get('status', 'not_run')} |",
         f"| Tests | {tests.get('status', 'not_run')} |",
         f"| Test source stability | {tests.get('source_status', 'unchecked')} |",
         "",
-        f"Validated provenance: {len(items)} items, "
+        f"Items with validated source citations: {len(items)} items, "
         f"{sum(i['origin'] == 'inferred' for i in items)} inferred. "
-        "These counts do not measure extraction completeness or requirement satisfaction.",
+        "Valid citations do not establish that the proposal is complete or the requirements are satisfied.",
     ]
     if "counts" in tests:
         c = tests["counts"]
@@ -37,7 +37,9 @@ def render_review(result, checked, provenance):
     for issue in issues:
         lines.append("- " + issue["description"].replace("\n", " "))
     if not issues:
-        lines.append("No validated open-issue entries. This does not establish completeness.")
+        lines.append(
+            "No open questions were recorded in validated claim records. Review for omissions."
+        )
     for title, messages in (
         ("Diagnostics", result["diagnostics"]),
         ("Storage", result.get("warnings", [])),
@@ -45,13 +47,13 @@ def render_review(result, checked, provenance):
         if messages:
             lines += ["", f"## {title}", ""]
             lines += ["- " + message.replace("\n", " ") for message in messages]
-    lines += ["", "## Review artifacts", ""]
+    lines += ["", "## Files to review", ""]
     for name in result["review_artifacts"]:
         lines.append(f"- [{name}]({name})")
     lines += ["", "## Next step", ""]
     if result["proposal_checks"] != "passed":
         lines.append(
-            "Resolve the proposal diagnostics before relying on its provenance or permitted-edit checks."
+            "Resolve the proposal diagnostics before relying on its citations or source-preservation checks."
         )
     elif result["status"] == "incomplete":
         lines.append(
@@ -69,13 +71,13 @@ def render_review(result, checked, provenance):
         )
     lines += [
         "",
-        "Review the capability/deferred-work table in the proposed documentation. "
+        "Review the feature table and work left for later in the proposed documentation. "
         "Trace links and suite success do not establish every assertion or real-device/provider behavior.",
         "",
-        "In-place edits already exist; do not reapply proposal.patch. For isolated recovery, "
-        "transfer only reviewed edits. Retain this complete result directory and the original recovery "
-        "bundle, then validate the actual adopted commit. A partial proposal does not enable or bypass "
-        "the ordinary development gate.",
+        "In-place edits already exist; do not reapply proposal.patch. For a separate draft, "
+        "transfer only reviewed edits. Retain this complete result directory and the original source "
+        "bundle, then check the reviewed commit with vt check. A partial proposal does not bypass "
+        "the configured development checks.",
         "",
     ]
     return "\n".join(lines)

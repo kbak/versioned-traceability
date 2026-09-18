@@ -3,7 +3,10 @@ name: versioned-traceability
 description: Draft requirements or implement and review a task with OpenFastTrace, using the supplied scope and baseline to follow linked documentation, code, tests, and evidence.
 ---
 
-Use the [semantic contract](references/semantics.md) from the matching tool
+Maintain requirements, code, tests, and their links while completing the task.
+Compare changes with the agreed starting commit and retain check results for review.
+
+Use the [concepts and result meanings](references/semantics.md) from the matching tool
 package or the copy included in context. Apply its distinctions in the existing
 task summary; no separate report is required. For design discussions or changes
 to requirements, use [requirements guidance](references/requirements.md).
@@ -20,9 +23,9 @@ Retain the target repository's absolute path. Use the supplied scope and baselin
 in standalone use, the CLI defaults to the repository's adopted scope.json and
 merge base with the locally known default branch (HEAD on that branch or detached
 HEAD). Use an explicit baseline for work based on another feature/release branch.
-Ask only about unresolved task or scope decisions. Without an adopted baseline,
-guide the caller to recover-baseline and acceptance; ordinary development does
-not repeat recovery. Candidate scope edits cannot authorize their own policy.
+Ask only about unresolved task or scope decisions. If the project lacks reviewed starting requirements and links,
+use [the existing-project skill](../recover-baseline/SKILL.md) to document and
+review them first. Ordinary development does not repeat that initial work. Candidate scope edits cannot authorize their own policy.
 
 Locate affected promises through existing headings, capability tables or targeted
 searches; read their full text and follow links through design, code and assertions.
@@ -49,7 +52,7 @@ caller's question or review process. Candidate approval files grant no authority
 
 Follow affected obligations to existing properties and maintain their assertions,
 generators and assumptions with the change. For selected new checks or properties
-handed off from onboarding, use the matching packaged
+identified while documenting the project, use the matching packaged
 [property-testing skill](../property-testing/SKILL.md), or its supplied inline
 copy. It strengthens selected obligations with ordinary executable tests and
 uses the existing review/evidence flow; it does not require property tests for
@@ -68,7 +71,7 @@ requirement-change summary, and flag contradictions, gaps and uncertainty with
 IDs and file references. This is best-effort review; structural checks do not
 establish semantic agreement or assertion adequacy.
 
-## Check and handoff
+## Run checks and report the result
 
 Run the configured check on the completed candidate and again after repairs:
 
@@ -103,7 +106,8 @@ Suite success does not establish execution of each linked test. With the optiona
 and ambiguous observations. A reported passing execution is not proof of requirement
 satisfaction. An explain exit 0 means inspection succeeded, not validation passed.
 
-After export, verify the actual commit with the original baseline:
+Once the change is committed or exported to another checkout, verify that commit
+with the original baseline:
 
 ```sh
 vt verify --repo /path/to/repo --base BASE_COMMIT --candidate EXPORTED_COMMIT \
@@ -114,5 +118,5 @@ Add the same --scope if one was supplied. For exit-4 evidence, use
 --allow-pending-review only when the caller enforces review before acceptance;
 verification leaves it pending. Recheck changed contents. Follow the existing
 Git/review process; this skill does not itself authorize publishing or acceptance.
-Handoff the exact evidence path and concise assessment. Completion requires
+Report the exact evidence path and a concise assessment. Completion requires
 matching current source, successful checks and the caller's review gates.

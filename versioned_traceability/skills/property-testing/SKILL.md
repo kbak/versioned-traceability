@@ -1,14 +1,17 @@
 ---
 name: property-testing
-description: Discover properties during onboarding; derive, maintain, and review executable properties from approved requirements during strengthening and evolution, using the project's existing test workflow.
+description: Identify, add, and maintain property tests for reviewed requirements using the project's existing test library and runner.
 ---
 
-During baseline recovery, use this workflow for discovery and a prioritized
-handoff only: identify existing checks, candidate properties, domains and missing
-evidence in the recovery capability table/claim notes. Preserve tests, generators,
-dependencies and runner configuration. The authoring steps below apply to
-authorized strengthening or evolution after baseline adoption; recovery success
-does not approve inferred intent or authorize that transition.
+A property is a rule intended to hold across a defined set of inputs or states.
+An executable property test searches for violations using generated inputs.
+
+When documenting an existing project's requirements with `vt recover`, identify
+existing tests, proposed properties, input domains, and missing checks in the
+feature table or claim notes. Preserve tests, generators, dependencies, and runner
+configuration during that documentation step. Add or change tests once the starting
+requirements are reviewed and the task authorizes test work. Passing documentation
+checks do not approve inferred intent.
 
 Improve the maintained test suite for the selected behavior. Start from approved
 requirements and their linked implementation; inferred behavior is a proposed
@@ -16,10 +19,10 @@ property until its intended meaning is established. Reuse existing test librarie
 requirements, IDs, and fixtures. Add a separate property item only when it expresses
 a useful refinement, not a duplicate requirement. Ordinary example tests remain useful.
 
-For strengthening, take selected properties from the onboarding handoff. During
-evolution, follow changed obligations and implementation to their existing
-properties; maintain affected assertions, generators and assumptions, adding
-checks for new obligations or gaps. Preserve identities for surviving promises;
+To improve the test suite, start with missing checks identified in the requirements
+or review. When behavior changes, follow the affected requirements and code to
+existing properties. Update assertions, generators, and assumptions, and add
+checks for new requirements or uncovered behavior. Preserve identities for surviving promises;
 revise changed meaning through the existing requirement/review policy. Record
 deferred checks and counterexamples in the same maintained documentation/tests.
 

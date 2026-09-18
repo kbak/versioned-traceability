@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "versioned-traceability"
 version = "0.4.5"
-description = "Git-native traceability checks and version-bound verification evidence"
+description = "Check requirement links and tests, compare Git versions, and save source-linked results"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = ["junitparser>=5.0.3,<6"]

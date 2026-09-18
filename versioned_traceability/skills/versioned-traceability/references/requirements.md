@@ -1,11 +1,15 @@
 # Requirements and design
 
-Use the shared [semantic contract](semantics.md), included alongside this guidance
+Write concrete behavior and constraints in the project's existing Markdown
+documents. Give them OpenFastTrace (OFT) IDs and link related design, code, and
+tests so later changes can be checked and reviewed.
+
+Use the shared [concepts and result meanings](semantics.md), included alongside this guidance
 in agent contexts. Keep coverage, origin, approval and execution evidence distinct.
 
 Normal checks read root scope.json from the adopted baseline; omit --scope to
 use it. Use external scope only when supplied by the caller. Candidate scope
-edits cannot authorize themselves; recovery proposals need review and adoption.
+edits cannot authorize themselves; proposed starting requirements and scope need review before use.
 
 ## Author requirements and design
 

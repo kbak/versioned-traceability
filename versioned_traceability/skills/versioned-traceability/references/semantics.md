@@ -1,9 +1,25 @@
-# Traceability semantics
+# Traceability concepts and result meanings
 
-Use this contract when authoring, reviewing, querying, or summarizing traceability.
-It defines how to interpret the existing OFT artifacts, recovery records, and
-Versioned Traceability evidence. It adds no required tools, artifact types, or
-schema fields. Humans and agents use the same meanings.
+Use these definitions when writing requirements, following their links, or
+interpreting check results. The same meanings apply to human and agent workflows.
+
+## The checking workflow
+
+| Term | Meaning |
+| --- | --- |
+| Requirement | A statement of expected behavior or a constraint the software must satisfy. |
+| Traceability link | An explicit reference connecting a requirement to related requirements, design, code, or tests. |
+| Baseline | The Git commit used as the starting point for comparison. A reviewed baseline contains requirements and checking rules accepted through the project's review process. |
+| Candidate | The source version being checked: a commit or the current worktree. |
+| Scope | The configuration selecting trace inputs, coverage rules, and the test command. |
+| Evidence | Saved check results, logs, and source identities. Interpret them with the recorded scope and method. |
+| Baseline recovery | The initial process of documenting requirements and links from an existing project's sources. The commands are `vt recover` and `vt recover-check`. |
+| Property | A rule intended to hold across a stated domain of inputs or states. Property tests search for counterexamples using generated inputs. |
+
+`vt check` validates links in both baseline and candidate and runs the candidate's
+tests. It records specification and test changes for review. `vt verify` matches
+saved evidence to source contents without rerunning tests. Neither command grants
+approval or proves that all intended behavior is correct.
 
 ## Artifacts and coverage
 

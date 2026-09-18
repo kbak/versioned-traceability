@@ -1,8 +1,12 @@
-# Optional test-execution links
+# Link individual test results to traceability records
 
-This provisional profile associates individual JUnit results with OFT test
-artifacts. Humans and agents use the same fields. It needs no additional runtime
-dependency in vt; the project supplies its own test runner.
+A passing test suite does not tell the checker which requirement-linked tests ran.
+Enable `tests.execution_links` to associate individual JUnit results with named
+OpenFastTrace (OFT) test artifacts. OFT supplies their links to requirements.
+
+This optional configuration uses JUnit testcase properties and needs no additional
+vt runtime dependency. The project supplies its test runner and emits the IDs.
+The fields and evidence format below are provisional.
 
 ## Enable for a scope
 
@@ -18,7 +22,7 @@ Add this object inside the existing `tests` configuration:
 This requires `tests.format: junit` (the default). Select the project's actual
 verification types; `utest` is an example, not a universal requirement. Each
 referenced artifact must be imported by OFT, have the exact ID and revision, and
-originate within `test_paths`. The scope is approved policy just as before.
+originate within `test_paths`. Review this configuration as part of the trusted scope.
 
 Omitting `execution_links` preserves the existing suite/command behavior,
 including for old evidence bundles. Enabling the profile requires a fresh check.
@@ -106,8 +110,8 @@ def pytest_collection_modifyitems(items):
 ```
 
 The example selects `junit_family = xunit1`, registers the marker, and disables
-the pytest cache provider. It was exercised with pytest 9.1.1. Other runners can
-emit this profile, but are not thereby certified as compatible. Pytest notes
+the pytest cache provider. Other runners can emit these fields; validate their handling of passing, failing,
+skipped, and missing cases before relying on the association. Pytest notes
 that testcase properties can fail strict JUnit schema validation in other
 consumers; do not assume the extension works in every CI report viewer.
 
@@ -161,7 +165,7 @@ reuse candidate executions. The separate in-toto test statement still summarizes
 the suite/command outcome and does not assert per-requirement verification.
 
 A passing suite with the boundary test deselected must show `not_observed` for
-that test artifact, and rejects the check when that artifact is required. The gate
+that test artifact, and rejects the check when that artifact is required. This requirement
 cannot detect an omitted parameter case, an insufficient search budget, a narrowed
-generator or a producer that falsely reports execution. Even a linked `passed` outcome establishes neither assertion
-adequacy nor requirement satisfaction, and does not fill structural graph gaps.
+generator, or a producer that falsely reports execution. A linked `passed` outcome
+still requires review of the assertion and its relation to the requirement.

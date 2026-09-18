@@ -1,5 +1,8 @@
 # Running the tests
 
+These instructions are for contributors testing Versioned Traceability itself.
+To check your own project, follow [check a change](../README.md#check-a-change).
+
 From the project checkout, in a Python virtual environment with Git and Java
 available:
 
@@ -60,5 +63,5 @@ In-place tests cover reviewable checkout edits, retained originals/provenance,
 dirty/staged/untracked work, branch and commit changes, concurrent edits, linked
 Git worktrees, automatic storage discovery, schema 1 compatibility, and exclusion
 of quoted historical annotations from live coverage. Both modes exercise adoption
-and subsequent development. They do not measure LLM extraction quality; use the
-OpenHands recovery example for that experiment.
+and subsequent development. They do not measure how accurately an agent reconstructs requirements. Assess
+that separately by reviewing the agent's proposed documentation against its sources.
