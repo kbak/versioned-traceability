@@ -15,6 +15,7 @@ interpreting check results. The same meanings apply to human and agent workflows
 | Evidence | Saved check results, logs, and source identities. Interpret them with the recorded scope and method. |
 | Baseline recovery | The initial process of documenting requirements and links from an existing project's sources. The commands are `vt recover` and `vt recover-check`. |
 | Property | A rule intended to hold across a stated domain of inputs or states. Property tests search for counterexamples using generated inputs. |
+| Logical statement | An optional precise expression of a property beside its prose and ID, with a defined domain and assumptions. It becomes machine-checkable only when interpreted by a tool with defined semantics. |
 
 `vt check` validates links in both baseline and candidate and runs the candidate's
 tests. It records specification and test changes for review. `vt verify` matches

@@ -1,4 +1,4 @@
-"""Check a packaged example, its deliberate boundary defect, and restoration.
+"""Check a packaged example against boundary and incomplete-contract defects.
 
 Run with an installed vt wheel and the selected language's dependencies. Copies
 come from this source tree (also included in the sdist); no original is modified.
@@ -73,42 +73,46 @@ def main():
     target = repo / filename
     original = target.read_text()
     if original.count(fragment) != 1:
-        raise RuntimeError("Example changed; update its deliberate boundary mutation")
+        raise RuntimeError("Example changed; update its deliberate mutations")
     summary = {
         "language": args.language,
         "vt_version": importlib.metadata.version("versioned-traceability"),
         "variants": {},
     }
     try:
-        for variant in ("correct", "mutant", "restored"):
+        mutations = {"mutant": ">", "equality-only": "=="}
+        for variant in ("correct", *mutations, "restored"):
+            is_mutant = variant in mutations
             target.write_text(
-                original.replace(fragment, fragment.replace(">=", ">"))
-                if variant == "mutant"
+                original.replace(fragment, fragment.replace(">=", mutations[variant]))
+                if is_mutant
                 else original
             )
             artifacts = output / variant
             result = check(repo, scope_path, "HEAD", "worktree", artifacts, args.oft_jar)
-            expected = "rejected" if variant == "mutant" else "passed"
+            expected = "rejected" if is_mutant else "passed"
             tests = result["tests"]
             valid = (
                 result["status"] == expected
-                and tests["status"] == ("failed" if variant == "mutant" else "passed")
-                and tests["exit_code"] == (1 if variant == "mutant" else 0)
+                and tests["status"] == ("failed" if is_mutant else "passed")
+                and tests["exit_code"] == (1 if is_mutant else 0)
                 and tests["source_status"] == "matched"
                 and all(
                     result["trace"][label]["status"] == "passed" for label in ("base", "candidate")
                 )
             )
-            if variant == "mutant":
+            if is_mutant:
                 valid = valid and failure_marker in (artifacts / "tests.log").read_text()
             if args.language == "python" and valid:
-                boundary = next(
-                    item
-                    for item in tests["execution_links"]["artifacts"]
-                    if item["id"] == "utest~expiration-boundary~1"
-                )
-                valid = boundary["status"] == ("failed" if variant == "mutant" else "passed")
-            if variant != "mutant" and valid:
+                outcomes = {
+                    item["id"]: item["status"] for item in tests["execution_links"]["artifacts"]
+                }
+                valid = outcomes == {
+                    "utest~expiration-postcondition~1": "failed" if is_mutant else "passed",
+                    "utest~expiration-boundary~1": "failed" if variant == "mutant" else "passed",
+                    "utest~expiration-shift~1": "passed",
+                }
+            if not is_mutant and valid:
                 verify(repo, scope_path, "HEAD", "worktree", artifacts / "evidence.json")
             summary["variants"][variant] = {
                 "expected_outcome": valid,

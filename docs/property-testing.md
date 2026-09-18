@@ -48,6 +48,65 @@ and harnesses live in the test suite and participate in the existing review.
 Later runtime assertions, differential tests, schema checks, or symbolic analysis
 can target the same identity with their own methods and evidence limits.
 
+### Optional logical statements
+
+For selected critical or ambiguous requirements, add a logical statement beside
+the existing prose and OFT ID. Use these labels when helpful; they are ordinary
+Markdown, not required fields or a new specification language:
+
+- **Domain:** variables, types, units, and the inputs or states covered.
+- **Assumptions:** environmental conditions or caller obligations the guarantee
+  depends on. State arithmetic, clock, and concurrency assumptions where relevant.
+- **Logical statement:** the property, with its quantifiers and observation point.
+  Identify it as a precondition, postcondition, state invariant, or temporal property.
+
+For example, the expiration requirement can include:
+
+```text
+Domain: last and now are integer timestamps in the same unit; timeout is a
+        positive integer. result is the Boolean returned by expired(last, now, timeout).
+Assumptions: mathematical integer arithmetic, without overflow.
+Logical statement (postcondition):
+  For every input in the domain, on return:
+    result is true if and only if now >= last + timeout.
+```
+
+A precondition is an obligation before a call; a postcondition is a guarantee
+on completion under the stated assumptions and preconditions. For a state
+invariant, name the state and when it must hold, such as after every completed
+operation. For a temporal property, define the relevant events and any ordering,
+time, or fairness assumptions. For state changes, distinguish old and new values
+and state what must remain unchanged when that matters.
+
+Add only details that clarify behavior or guide a check. Reuse an already precise
+statement rather than restating it in several notations. If independently changing
+properties need separate identities, use linked OFT items through the project's
+existing conventions. A formula that disagrees with the prose is an unresolved
+specification conflict; neither representation silently overrides the other.
+
+Keep assumptions separate from obligations being checked. An agent must not turn
+"reject unauthorized requests" into a precondition that all requests are authorized.
+Specify required invalid-input behavior separately. Strengthening a precondition,
+narrowing a domain, or weakening a guarantee changes the promise and follows the
+normal revision and review policy.
+
+Readable logic is not automatically machine-checked. OFT imports it as requirement
+text and checks links; vt records changes and execution results. Tests and later
+formalizations must reference the relevant property ID and revision using the
+existing traceability mechanism. Keep generator ranges, sample counts, and solver
+bounds in the checking configuration or its documentation; they do not redefine
+the requirement's domain.
+
+When a formal tool is introduced, use its native language and identify the model
+or predicate that represents the property. Record its assumptions, bounds, and
+tool version with the result. Model checking also needs initial states, allowed
+transitions, and a justified relationship to the implementation. A shared property
+ID does not prove that prose, tests, and models mean the same thing. Reuse predicates
+where practical and review translations; do not assume the guarantee in the model
+instead of checking it.
+
+## Record check results
+
 Use native JUnit or command results through the existing scope. Python can also
 use the optional [per-test execution links](../versioned_traceability/skills/versioned-traceability/references/execution-links.md).
 One reported property case may execute many generated examples; the JUnit case
@@ -60,10 +119,10 @@ establish a universal claim; an absent, skipped, invalid, or timed-out check doe
 not become passing evidence. To require observations for critical checks,
 set `tests.execution_links.required_artifacts` to their named OFT keys, such as
 `["utest~expiration-boundary"]`. For each required key, the checker requires
-exactly one imported revision and reported passing results. Missing declarations or results, skips, and ambiguous
-revisions fail the check. Other linked test results are reported without this
-additional requirement. This detects absent artifacts; it cannot detect missing
-generated inputs or weakened generators.
+exactly one imported revision and reported passing results. Missing declarations
+or results, skips, and ambiguous revisions fail the check. Other linked test results
+are reported without this additional requirement. This detects absent artifacts;
+it cannot detect missing generated inputs or weakened generators.
 The [execution-link reference](../versioned_traceability/skills/versioned-traceability/references/execution-links.md#require-selected-artifacts-to-pass)
 defines the policy and its limits.
 

@@ -14,7 +14,7 @@
     "execution_links": {
       "format": "junit-properties-v1",
       "artifact_types": ["utest"],
-      "required_artifacts": ["utest~expiration-boundary", "utest~expiration-shift"]
+      "required_artifacts": ["utest~expiration-postcondition", "utest~expiration-boundary", "utest~expiration-shift"]
     }
   }
 }

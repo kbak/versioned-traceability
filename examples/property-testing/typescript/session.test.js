@@ -6,6 +6,13 @@ import { expired } from "./session.js";
 const timestamp = fc.integer({ min: 0, max: 1_000_000_000 });
 const timeout = fc.integer({ min: 1, max: 1_000_000 });
 
+// [utest~expiration-postcondition~1->req~expiration~1]
+test("expiration matches its postcondition", () => {
+  fc.assert(fc.property(timestamp, timestamp, timeout, (last, now, ttl) => {
+    assert.equal(expired(last, now, ttl), now - last >= ttl);
+  }), { numRuns: 100, examples: [[0, 1, 1], [0, 2, 1]] });
+});
+
 // [utest~expiration-boundary~1->req~expiration~1]
 test("expiration includes equality", () => {
   fc.assert(fc.property(timestamp, timeout, (last, ttl) => {

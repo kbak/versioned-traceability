@@ -36,6 +36,16 @@ design/architecture links. Put meaningful rationale and rejected alternatives
 in existing task/design notes when useful. Keep intended files within the
 specification paths; flag scope conflicts instead of silently expanding them.
 
+For critical or ambiguous rules, optionally add a logical statement beside the
+requirement's prose and ID. Define its domain (variables, types, units), assumptions,
+and guarantee, including quantifiers and relevant state or time boundaries. Use
+preconditions, postconditions, invariants, or temporal properties as appropriate;
+do not require every requirement to have a formula. Follow the
+[property-testing guidance](../../property-testing/SKILL.md). Keep assumptions and
+test-search limits distinct from promised behavior. Conflicting prose and logic
+need a review decision, and a stronger precondition or narrower domain can weaken
+the promise. A textual formula is not proof or evidence that a test ran.
+
 Carry agreed text, IDs/revisions, acceptance criteria, documentation paths and
 authorized promise changes into the existing handoff. Keep unapproved proposals
 and unresolved questions separate. No extra document, planning pass or approval

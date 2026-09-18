@@ -13,6 +13,16 @@ The `expired` function in [Main.hs](Main.hs) implements the expiration decision.
 Covers:
  - req~expiration~1
 
+## Expiration postcondition
+`utest~expiration-postcondition~1`
+
+The `postcondition` property in [Main.hs](Main.hs) compares the result with the
+specified rule over generated signed timestamps and positive timeouts. Explicit
+examples check equality and expiration after the boundary.
+
+Covers:
+ - req~expiration~1
+
 ## Exact expiration boundary
 `utest~expiration-boundary~1`
 

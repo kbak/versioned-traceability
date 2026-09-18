@@ -215,6 +215,10 @@ library, or use the examples for Hypothesis, fast-check, and QuickCheck. Tests r
 through the project's normal runner without an agent. Passing searches provide
 evidence about exercised inputs; they are not proofs.
 
+For critical or ambiguous rules, add an optional [logical statement](docs/property-testing.md#optional-logical-statements)
+beside the requirement: its domain, assumptions, and precise guarantee. Tests and
+later formal models can reference the same property ID and revision.
+
 To link individual reported test outcomes to requirement coverage, use the optional
 [execution-link configuration](versioned_traceability/skills/versioned-traceability/references/execution-links.md)
 and [pytest example](examples/pytest-session). This can also require selected

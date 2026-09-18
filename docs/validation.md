@@ -22,8 +22,10 @@ The [CI workflow](../.github/workflows/ci.yml) builds the source distribution an
 then its wheel, installs the wheel, and runs packaged tests/fixtures from a
 separate working directory. It checks Python 3.11 and 3.12, packaged skill
 references, lint, and the three language examples. Example smoke checks require
-passing behavior, rejection of a deliberate boundary defect, and passing
-restoration; their native logs and evidence are retained as artifacts.
+passing behavior, rejection of boundary and equality-only defects, and passing
+restoration. The equality-only defect satisfies the boundary and translation
+properties but violates the full expiration postcondition. Native logs and
+evidence are retained as artifacts.
 JavaScript dependencies and OFT downloads require network access. QuickCheck is
 provisioned only in its dedicated disposable runner.
 
