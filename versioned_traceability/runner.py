@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import __version__
+from . import __version__, boundaries
 from .common import CheckError, canonical, digest, read_json, within, write_json, xml_tree
 from .config import load_baseline_scope, load_scope
 from .evidence import check_artifacts, read_statement, statement, test_statement
@@ -81,6 +81,9 @@ def check(
             evidence["candidate"] = candidate.identity()
             (out / "base-manifest.json").write_bytes(canonical(base.manifest))
             (out / "candidate-manifest.json").write_bytes(canonical(candidate.manifest))
+            evidence["source_boundaries"] = boundaries.inventory(
+                base.manifest, candidate.manifest, scope
+            )
             before, base_trace = trace(base, scope, jar, java, out, "base")
             after, candidate_trace = trace(candidate, scope, jar, java, out, "candidate")
             evidence["trace"] = {"base": base_trace, "candidate": candidate_trace}
@@ -105,6 +108,7 @@ def check(
                 scope,
             )
             review = review_record(base, candidate, scope_sha256, changed)
+            review["source_boundaries"] = evidence["source_boundaries"]
             write_json(out / "review.json", review)
             (out / "review.patch").write_text(
                 review_diff(base, candidate, changed), encoding="utf-8"
@@ -308,6 +312,7 @@ def verify(
             != evidence[label]["sha256"]
         ):
             raise CheckError(f"{label} manifest does not match evidence identity")
+    boundaries.retained(evidence, directory, scope)
     with tempfile.TemporaryDirectory(prefix="vt-verify-") as directory:
         current = snapshot(repo, candidate_ref, Path(directory) / "candidate")
         if current.sha256 != evidence["candidate"]["sha256"]:

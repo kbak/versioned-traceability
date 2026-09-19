@@ -3,6 +3,8 @@
 from html import escape
 from os.path import commonprefix
 
+from . import boundaries
+
 
 def code(value):
     return "<code>" + escape(" ".join(str(value).split())).replace("|", "&#124;") + "</code>"
@@ -48,6 +50,15 @@ def render_summary(evidence, changed, artifacts):
         f"| Test source stability | {code(tests['source_status'])} |",
         f"| Specification/test review gate | {code(evidence.get('review', {}).get('status', 'not_recorded'))} |",
     ]
+    if evidence.get("source_boundaries"):
+        lines += ["", "## Source boundaries", ""]
+        boundary_lines = boundaries.lines(evidence["source_boundaries"])
+        lines += ["- " + line for line in boundary_lines[:-1]]
+        lines += ["", boundary_lines[-1]]
+        lines += [
+            "",
+            "See [review.json](review.json) for the complete changed-path inventory. Paths outside review selection are still source-hashed.",
+        ]
     if "counts" in tests:
         counts = tests["counts"]
         lines += [

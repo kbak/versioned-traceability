@@ -3,6 +3,7 @@
 import tempfile
 from pathlib import Path
 
+from . import boundaries
 from .common import CheckError, canonical, digest, read_json, run, xml_tree
 from .config import load_scope
 from .evidence import check_artifacts, read_statement
@@ -163,6 +164,7 @@ def explain_many(identifiers, evidence_path, jar, snapshot="candidate", java="ja
             if key in tests
         },
         "review": evidence.get("review", {"status": "not_recorded"}),
+        "source_boundaries": boundaries.retained(evidence, directory, scope),
         "limitations": [
             "Describes the saved bundle; use vt verify to match current source. Artifact hashes do not authenticate the unsigned producer.",
             "OFT coverage is structural. Linked execution outcomes describe only reported cases, not assertion adequacy, all required scenarios, or requirement satisfaction.",
@@ -208,6 +210,7 @@ def _status_lines(result):
         f"Scope: {result['scope']['name']} ({result['scope']['sha256']})",
         f"Evidence: {result['evidence']}",
     ]
+    lines.extend(boundaries.lines(result.get("source_boundaries")))
     lines.extend(f"Diagnostic: {message}" for message in result["recorded_diagnostics"])
     lines.extend(result["limitations"])
     return lines

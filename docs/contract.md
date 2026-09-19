@@ -378,3 +378,13 @@ Caller-required code review also applies to exit-0 checks.
 Verification matches contents; it does not rerun tests. A worktree can match a
 later exported commit with a different commit ID when the full manifest matches.
 Rerun checks after repairs or shared-branch updates that change the candidate.
+
+## Source, tracing and review boundaries
+
+New check evidence and `review.json` include `source_boundaries`: a sorted inventory of changed paths from the complete captured base/candidate manifests. Each path records addition/deletion/modification, membership in `inputs`, and selection by `specification_paths` or `test_paths`. Counts are named for those exact meanings. Requirement-change entries and file-change entries in `review.changes` can describe the same path, so their count is not a distinct changed-file count.
+
+A file outside the selected semantic-review roots is still included in full source identity when it belongs to the captured manifest. Editing it after a check invalidates source verification. This inventory does not expand the frozen scope, infer missing requirements, or certify the meaning of excluded files. The ordinary full candidate diff may still require review by the consuming workflow.
+
+Source identity, OFT structural coverage, executed assertions and semantic approval are separate results. `review_required` means the selected changes need external review; it is neither approval nor rejection. `passed` does not turn out-of-selection documents into semantically approved artifacts.
+
+`vt check`, the human summary and `vt explain` expose these boundaries. Verification recomputes new inventories from retained manifests and the trusted scope. Older schema-2 evidence remains readable: `vt explain` derives the inventory from its retained manifests without rewriting historical records.

@@ -2,6 +2,7 @@
 
 from junitparser import JUnitXmlError
 
+from . import boundaries
 from .common import CheckError, xml_tree
 from .testing import report_cases
 
@@ -62,6 +63,7 @@ def render_check(result, out):
         f"specification/test review: {review.get('status', 'not_recorded')}"
         f"; changes={review.get('change_count', 'unknown')}"
     )
+    lines.extend(boundaries.lines(result.get("source_boundaries")))
     diagnostics = result["diagnostics"]
     lines.extend("- " + _excerpt(message, 600) for message in diagnostics[:5])
     if len(diagnostics) > 5:
