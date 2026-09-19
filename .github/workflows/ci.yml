@@ -89,6 +89,21 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y ghc libghc-quickcheck2-dev
+          # Hosted runners may put a separate GHCup compiler ahead of /usr/bin.
+          # Pair runghc with the compiler whose package DB apt provisioned.
+          command -v runghc
+          runghc --version
+          /usr/bin/ghc --version
+          /usr/bin/ghc-pkg list QuickCheck
+          mkdir "$RUNNER_TEMP/haskell-bin"
+          cat > "$RUNNER_TEMP/haskell-bin/runghc" <<'SH'
+          #!/bin/sh
+          exec /usr/bin/runghc -f /usr/bin/ghc "$@"
+          SH
+          chmod +x "$RUNNER_TEMP/haskell-bin/runghc"
+          echo "$RUNNER_TEMP/haskell-bin" >> "$GITHUB_PATH"
+          printf 'import Test.QuickCheck\nmain = quickCheck (\\x -> (x :: Int) == x)\n' > "$RUNNER_TEMP/quickcheck-preflight.hs"
+          "$RUNNER_TEMP/haskell-bin/runghc" "$RUNNER_TEMP/quickcheck-preflight.hs"
       - name: Build and install
         run: |
           python -m pip install build
