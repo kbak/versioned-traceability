@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "name": "independent-retry-promises",
+  "inputs": ["requirements.md", "retry.py", "tests"],
+  "specification_paths": ["requirements.md"],
+  "test_paths": ["tests"],
+  "required_coverage": {"req": ["impl", "utest"]},
+  "policy": {"require_revision_increase": true},
+  "tests": {"format": "command", "command": ["python3", "-m", "unittest", "discover", "-s", "tests", "-v"], "timeout_seconds": 30}
+}

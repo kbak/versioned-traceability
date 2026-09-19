@@ -50,3 +50,16 @@ Carry agreed text, IDs/revisions, acceptance criteria, documentation paths and
 authorized promise changes into the existing handoff. Keep unapproved proposals
 and unresolved questions separate. No extra document, planning pass or approval
 step is required; drafting does not authorize implementation or scope changes.
+
+## Keep independently evolving promises distinct
+
+Choose stable IDs for independently reviewable behavior (for example ordering,
+visibility, retry timing and errors), rather than requiring every consumer of a
+large umbrella interface declaration to acknowledge every change. Avoid splitting
+sentences mechanically. For an intentional split, record the old ID/revision,
+successor IDs, preserved obligations, authorized changes and migrated consumers;
+keep one authoritative active set and preserve history separately. Advancing a
+reference requires review of continued assertion coverage, never just a bulk bump.
+Use `vt impact --evidence PATH` to inspect derived declaration/edge changes and,
+for new bundles, source-line categories. Metadata-only revision changes do not
+establish semantic adequacy or reduced review effort.

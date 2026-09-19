@@ -56,6 +56,37 @@ def report_items(path):
     return items
 
 
+def graph_report(items_path, jar, java="java"):
+    """Ask the existing OFT engine for its graph over an exported item set."""
+    jar = jar.resolve()
+    validate_jar(jar)
+    with tempfile.TemporaryDirectory(prefix="vt-explain-") as temporary:
+        output = Path(temporary)
+        report = output / "trace.xml"
+        traced = run(
+            [
+                java,
+                "-jar",
+                str(jar),
+                "trace",
+                "-o",
+                "aspec",
+                "-f",
+                str(report),
+                str(items_path),
+            ],
+            output,
+            output / "trace.log",
+        )
+        if traced["exit_code"] not in (0, 1) or not report.is_file():
+            raise CheckError(
+                "OFT could not report retained artifacts: "
+                + (output / "trace.log").read_text(errors="replace")
+            )
+        items = report_items(report)
+    return items, traced
+
+
 def explain_many(identifiers, evidence_path, jar, snapshot="candidate", java="java"):
     """Load one retained graph and share evidence metadata across exact IDs."""
     identifiers = list(dict.fromkeys(identifiers))
@@ -89,32 +120,7 @@ def explain_many(identifiers, evidence_path, jar, snapshot="candidate", java="ja
             != evidence[label]["sha256"]
         ):
             raise CheckError(f"{label} manifest does not match evidence identity")
-    jar = jar.resolve()
-    validate_jar(jar)
-    with tempfile.TemporaryDirectory(prefix="vt-explain-") as temporary:
-        output = Path(temporary)
-        report = output / "trace.xml"
-        traced = run(
-            [
-                java,
-                "-jar",
-                str(jar),
-                "trace",
-                "-o",
-                "aspec",
-                "-f",
-                str(report),
-                str(directory / f"{snapshot}-items.xml"),
-            ],
-            output,
-            output / "trace.log",
-        )
-        if traced["exit_code"] not in (0, 1) or not report.is_file():
-            raise CheckError(
-                "OFT could not report retained artifacts: "
-                + (output / "trace.log").read_text(errors="replace")
-            )
-        items = report_items(report)
+    items, traced = graph_report(directory / f"{snapshot}-items.xml", jar, java)
     for identifier in identifiers:
         if identifier not in items:
             raise CheckError(

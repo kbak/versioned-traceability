@@ -226,3 +226,7 @@ named tests to run and pass.
 
 See the [command and evidence reference](docs/contract.md) for configuration and
 limits, and [running the tests](docs/validation.md) for contributing to this tool.
+
+## Inspect requirement evolution
+
+Use `vt impact --evidence /path/to/evidence.json` to compare saved OFT declarations, exact edges and source-change categories. The [granularity guide](docs/requirement-granularity.md) and [bounded retry example](examples/granular-retries) show stable IDs, independent policy evolution, revision-only maintenance and preserved stale-link rejection. Reports do not infer assertion adequacy or human review effort.

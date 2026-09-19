@@ -10,6 +10,7 @@ from .check_output import render_check
 from .common import CheckError
 from .evidence import EXIT_CODES
 from .explain import explain, explain_many, render_context, render_explanation
+from .impact import impact, render_impact
 from .oft import default_jar, install_jar
 from .recovery import active_recovery, check_recovery, prepare
 from .runner import check, verify
@@ -60,6 +61,13 @@ def parser():
     )
     root.add_argument("--version", action="version", version=__version__)
     commands = root.add_subparsers(dest="action", required=True)
+    impacting = commands.add_parser(
+        "impact", help="Compare saved OFT declarations, edges and source-change categories"
+    )
+    impacting.add_argument("--evidence", type=Path, required=True)
+    impacting.add_argument("--format", choices=("text", "json"), default="text")
+    impacting.add_argument("--oft-jar", type=Path, default=default_jar())
+    impacting.add_argument("--java", default="java")
     explaining = commands.add_parser("explain", help="Explain OFT items using saved check evidence")
     explaining.add_argument(
         "identifiers", nargs="+", help="Complete OFT item IDs, including revisions"
@@ -180,6 +188,10 @@ def parser():
 def main(argv=None):
     args = parser().parse_args(argv)
     try:
+        if args.action == "impact":
+            result = impact(args.evidence, args.oft_jar, args.java)
+            print(json.dumps(result, indent=2) if args.format == "json" else render_impact(result))
+            return 0
         if args.action == "explain":
             compact = args.compact or len(args.identifiers) > 1
             result = (

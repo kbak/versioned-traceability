@@ -13,6 +13,7 @@ from .execution import (
     required_execution_diagnostics,
     retained_execution_links,
 )
+from .impact import source_changes
 from .oft import OFT_SHA256, OFT_VERSION, policy_diagnostics, trace, validate_jar
 from .review import changes, review_diff, review_record, revision_diagnostics
 from .snapshot import changed_source, repository, resolve_commit, snapshot
@@ -109,6 +110,7 @@ def check(
             )
             review = review_record(base, candidate, scope_sha256, changed)
             review["source_boundaries"] = evidence["source_boundaries"]
+            review["source_changes"] = source_changes(base, candidate, before, after, scope)
             write_json(out / "review.json", review)
             (out / "review.patch").write_text(
                 review_diff(base, candidate, changed), encoding="utf-8"

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "versioned-traceability"
-version = "0.4.5"
+version = "0.4.6"
 description = "Check requirement links and tests, compare Git versions, and save source-linked results"
 readme = "README.md"
 requires-python = ">=3.11"
