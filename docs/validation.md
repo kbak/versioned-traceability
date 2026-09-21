@@ -7,7 +7,7 @@ From the project checkout, in a Python virtual environment with Git and Java
 available:
 
 ```sh
-python3 -m pip install -e '.[test]' ruff
+python3 -m pip install -e '.[test,smt]' ruff
 vt install-oft
 vt install-alloy
 python3 -m unittest discover -s tests -v
@@ -15,11 +15,13 @@ ruff check .
 ruff format --check .
 ```
 
-Tests run OFT, Alloy, and example test commands in temporary directories. Missing
+Tests run OFT, Alloy, Z3, and example test commands in temporary directories. Missing
 pinned JARs fail the suite. To use existing JARs, set `VT_OFT_JAR` and `VT_ALLOY_JAR`
 instead of running the respective installers. Alloy remains optional for application
 projects that do not use model checking. Runner tests execute the real analyzer,
 including counterexamples, impossible witnesses, missing commands and bad models.
+Z3 tests additionally check native SMT-LIB replay, vacuous assumptions, `unknown`
+results, bounded model construction, missing evidence and exact observations.
 
 The [CI workflow](../.github/workflows/ci.yml) builds the source distribution and
 then its wheel, installs the wheel, and runs packaged tests/fixtures from a

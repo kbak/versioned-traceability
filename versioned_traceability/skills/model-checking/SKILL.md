@@ -1,6 +1,6 @@
 ---
 name: model-checking
-description: Author and maintain bounded Alloy models for selected requirements, validate their implementation mapping, and replay useful traces against real code.
+description: Author and maintain Alloy and Z3 models for selected requirements, validate their implementation mapping, and replay useful traces against real code.
 ---
 
 Use the project's recovered requirements and linked implementation to select a
@@ -8,8 +8,10 @@ small behavioral slice. During onboarding, record candidates and uncertain inten
 with the existing property notes. Author executable checks when the task authorizes
 them and their intended meaning is established. Reuse requirement IDs and revisions.
 
-Codex authors native `.als` models and an implementation-specific replay harness.
-Committed checks run through the existing Alloy analyzer without an LLM. Do not
+Codex authors native Alloy `.als` or Z3Py models and an implementation-specific
+replay harness. Use Alloy for relational structure and bounded state transitions;
+use Z3 for arithmetic or other SMT theories with explicit source semantics.
+Committed checks run through the existing analyzer or solver without an LLM. Do not
 introduce an intermediate specification language or a general source translator
 for a slice that a small explicit model can describe.
 
@@ -40,11 +42,14 @@ exercise additional implementation traces where practical. Preserve useful
 counterexamples as ordinary regression fixtures. Label replay as sampled
 correspondence evidence, not a proof that all implementation behavior is covered.
 
-Read [execution.md](references/execution.md) to run and retain checks. Read only
+Read [execution.md](references/execution.md) for Alloy or
+[smt.md](references/smt.md) for Z3 execution and retained evidence. Read only
 the relevant implementation guide: [Python](references/python.md) or
 [Daml](references/daml.md).
 
 Report the model/source identity, native command bounds, tool version, assumptions,
-and separate check/replay outcomes. A completed UNSAT assertion search means no
-counterexample in the modeled bounds. An unsatisfiable witness, missing command,
+and separate check/replay outcomes. A completed Alloy UNSAT assertion search means no
+counterexample in the modeled bounds. A Z3 UNSAT violation query establishes the
+encoded goal under its assumptions; validate those assumptions are satisfiable
+and distinguish unrestricted numeric domains from bounded transition depth. An unsatisfiable witness, missing command,
 parse error, timeout, or unknown result must not become passing evidence.

@@ -18,9 +18,15 @@ successful witness with inherited signatory authority. Give callers read access
 without granting write authority when testing authorization independently of
 visibility. Keep visibility restrictions explicit if they are also modeled.
 
-Use exact integer quanta for bounded quantities and relate them to the actual
+Use exact integer quanta for quantities and relate them to the actual
 `Numeric` scale, representable range, rounding and rejection behavior. Small Alloy
-integer scopes cannot establish the full decimal arithmetic contract. Preserve
+integer scopes cannot establish the full decimal arithmetic contract. With Z3,
+use scaled `Int` values and explicit representability checks at every evaluated
+operation. `Numeric s` has precision 38: quanta range from `-(10^38 - 1)` to
+`10^38 - 1` at scale `10^-s`. Addition/subtraction are exact when representable;
+model rounding separately before extending to multiplication or division.
+Do not evaluate arithmetic on a branch the implementation skips (for example,
+summing discarded slices during an exposure reset). Preserve
 nonnegative/positive input distinctions and zero/remainder cases.
 
 Replay via Daml Script against a fresh IDE ledger for each trace, building the
@@ -30,7 +36,7 @@ project's existing generated-input driver when available. Retain
 DAR digest, SDK version, inputs, native diagnostics and JUnit results. A pure
 Python simulation cannot validate ledger authorization or contract consumption.
 
-Decode native Alloy XML into the parameterized script's JSON input. Map contract
+Decode native Alloy XML or exact Z3 observations into the parameterized script's JSON input. Map contract
 atoms to actual returned IDs and compare the full active contract set across all
 modeled templates and parties after each transition. Compare amounts, owners,
 signatories, and business data as well as accepted/rejected outcomes. For a

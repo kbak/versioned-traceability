@@ -80,7 +80,7 @@ Shared IDs do not establish semantic equivalence. Review the translation and the
 model's relationship to the implementation; never assume the guarantee merely to
 make a model check pass.
 
-For an authorized bounded Alloy modeling task, use the sibling
+For an authorized Alloy or Z3 modeling task, use the sibling
 [model-checking skill](../model-checking/SKILL.md). During recovery, identify useful
 model candidates in the existing property notes; its executable authoring and
 replay steps apply when the task includes that work.

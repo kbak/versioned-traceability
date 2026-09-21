@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "model": "amounts.py",
+  "inputs": ["amounts.py", "README.md"],
+  "assumptions": "Mathematical integer amounts, nonnegative inputs, one split operation. This example has no application implementation mapping.",
+  "timeout_seconds": 30,
+  "solver_timeout_ms": 10000,
+  "commands": [
+    {"name": "Conservation", "kind": "check"},
+    {"name": "CanSplit", "kind": "run"}
+  ]
+}

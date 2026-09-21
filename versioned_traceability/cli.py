@@ -5,7 +5,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import __version__, alloy
+from . import __version__, alloy, smt
 from .check_output import render_check
 from .common import CheckError
 from .evidence import EXIT_CODES
@@ -73,6 +73,12 @@ def parser():
     modeling.add_argument("--out", type=Path, required=True, help="New or empty evidence directory")
     modeling.add_argument("--alloy-jar", type=Path, default=alloy.default_jar())
     modeling.add_argument("--java", default="java")
+    solving = commands.add_parser(
+        "smt-check", help="Check native Z3Py obligations and retain SMT-LIB evidence/JUnit"
+    )
+    solving.add_argument("--root", type=Path, default=Path.cwd())
+    solving.add_argument("--manifest", required=True, help="Manifest path relative to root")
+    solving.add_argument("--out", type=Path, required=True, help="New or empty evidence directory")
     impacting = commands.add_parser(
         "impact", help="Compare saved OFT declarations, edges and source-change categories"
     )
@@ -229,6 +235,12 @@ def main(argv=None):
         if args.action == "install-alloy":
             print(alloy.install_jar(args.destination))
             return 0
+        if args.action == "smt-check":
+            result = smt.check_models(args.root, args.manifest, args.out)
+            print(f"{result['status']}: {args.out.resolve() / 'result.json'}")
+            for command in result["commands"]:
+                print(f"- {command['name']}: {command['outcome']}")
+            return {"passed": 0, "failed": 1, "error": 2}[result["status"]]
         if args.action == "alloy-check":
             result = alloy.check_models(
                 args.root, args.manifest, args.out, args.alloy_jar, args.java

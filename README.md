@@ -227,10 +227,10 @@ named tests to run and pass.
 See the [command and evidence reference](docs/contract.md) for configuration and
 limits, and [running the tests](docs/validation.md) for contributing to this tool.
 
-## Check selected properties with Alloy
+## Check selected properties with Alloy or Z3
 
 The [model-checking skill](versioned_traceability/skills/model-checking/SKILL.md)
-guides Codex through building a small native Alloy model from selected requirements
+guides Codex through building a small native Alloy or Z3 model from selected requirements
 and their implementation, checking its assumptions, and replaying useful traces
 against actual code. Committed checks run without an agent:
 
@@ -245,6 +245,19 @@ bounds, and JUnit. A pass means the assertions had no counterexample within the
 modeled bounds and the required witnesses existed; it does not prove the model
 matches the implementation. See the [model-checking guide](docs/model-checking.md)
 for execution, evidence, and integration details.
+
+For arithmetic and other SMT theories, install the optional Z3 dependency and run
+native Z3Py obligations:
+
+```sh
+pip install 'versioned-traceability[smt]'
+vt smt-check --root examples/smt-checking --manifest checks.json --out /tmp/smt-check-1
+```
+
+The Z3 runner checks assumptions for satisfiability before searching for a
+violation. It retains exact SMT-LIB queries, models and solver diagnostics.
+`unknown`, timeouts and impossible preconditions cannot pass. A Z3 proof concerns
+the encoding under its assumptions; implementation replay remains separate.
 
 ## Inspect requirement evolution
 
