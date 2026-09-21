@@ -259,6 +259,13 @@ violation. It retains exact SMT-LIB queries, models and solver diagnostics.
 `unknown`, timeouts and impossible preconditions cannot pass. A Z3 proof concerns
 the encoding under its assumptions; implementation replay remains separate.
 
+For safety over arbitrary numbers of modeled transitions, use the same Z3
+installation with `vt chc-check`. Spacer learns an invariant; the runner checks
+its initialization, induction and target exclusion using ordinary SMT. Reachable
+targets yield validated concrete traces. See the
+[CHC guide](versioned_traceability/skills/model-checking/references/chc.md) and
+[allocation-loop example](examples/chc-checking).
+
 ## Inspect requirement evolution
 
 Use `vt impact --evidence /path/to/evidence.json` to compare saved OFT declarations, exact edges and source-change categories. The [granularity guide](docs/requirement-granularity.md) and [bounded retry example](examples/granular-retries) show stable IDs, independent policy evolution, revision-only maintenance and preserved stale-link rejection. Reports do not infer assertion adequacy or human review effort.

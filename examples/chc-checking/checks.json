@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "model": "allocation.py",
+  "inputs": ["allocation.py", "README.md"],
+  "assumptions": "Exact nonnegative mathematical integers, sequential allocation steps, no limit on iterations. No machine overflow or application correspondence claim.",
+  "timeout_seconds": 30,
+  "solver_timeout_ms": 10000,
+  "commands": [
+    {"name": "Conservation", "kind": "check"},
+    {"name": "SeveralRows", "kind": "run"}
+  ]
+}

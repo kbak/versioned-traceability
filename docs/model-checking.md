@@ -54,3 +54,22 @@ report in `tests.reports`. Include models, manifests, mappings and replay harnes
 in the test scope. Declare optional named OFT artifacts in a supported file rather
 than assuming `.als` annotations are imported. Use the existing required-execution
 policy for selected model artifacts after the scope is reviewed and adopted.
+
+## Unbounded reachability
+
+`vt chc-check` uses Z3 Spacer on linear Horn clauses derived from native Z3 state
+and transition formulas. It can establish safety for arbitrary modeled step
+counts. It does not automatically remove other bounds or prove liveness.
+
+Safe results require an invariant validated by ordinary SMT for initialization,
+each transition and target exclusion. Reachable results require reconstruction
+of the native rule derivation into concrete states and inputs. Initial-state
+vacuity, unsupported traces, unknown results and failed certificates cannot pass.
+Standard Horn satisfiability and native fixedpoint reachability have opposite
+SAT/UNSAT conventions; both formats are retained with their meaning explicit.
+
+The [CHC reference](../versioned_traceability/skills/model-checking/references/chc.md)
+describes the authoring API, portable export, certificates, trace format and shared
+`ReplayEvidence` recorder. Application models and replay adapters remain in the
+application repository. The reusable capture, validation and evidence machinery
+belongs to Versioned Traceability.

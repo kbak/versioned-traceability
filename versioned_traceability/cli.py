@@ -5,7 +5,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import __version__, alloy, smt
+from . import __version__, alloy, chc, smt
 from .check_output import render_check
 from .common import CheckError
 from .evidence import EXIT_CODES
@@ -79,6 +79,14 @@ def parser():
     solving.add_argument("--root", type=Path, default=Path.cwd())
     solving.add_argument("--manifest", required=True, help="Manifest path relative to root")
     solving.add_argument("--out", type=Path, required=True, help="New or empty evidence directory")
+    reachability = commands.add_parser(
+        "chc-check", help="Check unbounded reachability with Z3 Spacer"
+    )
+    reachability.add_argument("--root", type=Path, default=Path.cwd())
+    reachability.add_argument("--manifest", required=True, help="Manifest path relative to root")
+    reachability.add_argument(
+        "--out", type=Path, required=True, help="New or empty evidence directory"
+    )
     impacting = commands.add_parser(
         "impact", help="Compare saved OFT declarations, edges and source-change categories"
     )
@@ -235,8 +243,9 @@ def main(argv=None):
         if args.action == "install-alloy":
             print(alloy.install_jar(args.destination))
             return 0
-        if args.action == "smt-check":
-            result = smt.check_models(args.root, args.manifest, args.out)
+        if args.action in {"smt-check", "chc-check"}:
+            backend = chc if args.action == "chc-check" else smt
+            result = backend.check_models(args.root, args.manifest, args.out)
             print(f"{result['status']}: {args.out.resolve() / 'result.json'}")
             for command in result["commands"]:
                 print(f"- {command['name']}: {command['outcome']}")

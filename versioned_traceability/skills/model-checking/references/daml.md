@@ -36,7 +36,7 @@ project's existing generated-input driver when available. Retain
 DAR digest, SDK version, inputs, native diagnostics and JUnit results. A pure
 Python simulation cannot validate ledger authorization or contract consumption.
 
-Decode native Alloy XML or exact Z3 observations into the parameterized script's JSON input. Map contract
+Decode native Alloy XML, exact Z3 observations or reconstructed Spacer traces into the parameterized script's JSON input. Map contract
 atoms to actual returned IDs and compare the full active contract set across all
 modeled templates and parties after each transition. Compare amounts, owners,
 signatories, and business data as well as accepted/rejected outcomes. For a
@@ -55,3 +55,10 @@ decoding failure does not demonstrate that replay detects the mutation.
 Start with single-ledger transaction semantics. State explicitly that participant
 visibility, distributed Canton behavior, external valuations and orchestration
 are outside that slice unless separately modeled and exercised.
+
+For CHC loop models, relate recursive rules to the actual folds and their order.
+Distinguish source arithmetic from unbounded ghost accounting. Derive whether
+prefix checks are equivalent to whole-list validation under the stated domain;
+nonnegative inputs matter to that argument. Do not promote internal loop steps
+to separately committed transactions. Include all caller-supplied lists in replay,
+and distinguish those supplied IDs from every active contract on the ledger.

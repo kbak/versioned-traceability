@@ -122,20 +122,21 @@ def write_junit(result, path):
     import json
 
     cases = result["commands"]
+    suite_name = "z3-spacer" if result["method"] == "z3-spacer-check" else "z3"
     suite = ET.Element(
         "testsuite",
-        name="z3",
+        name=suite_name,
         tests=str(len(cases)),
         failures=str(sum(c["status"] == "failed" for c in cases)),
         errors=str(sum(c["status"] == "error" for c in cases)),
     )
     metadata = {k: v for k, v in result.items() if k not in {"commands", "artifacts"}}
     for case in cases:
-        element = ET.SubElement(suite, "testcase", classname="z3", name=case["name"])
+        element = ET.SubElement(suite, "testcase", classname=suite_name, name=case["name"])
         properties = ET.SubElement(element, "properties")
         if case.get("artifact_id"):
             ET.SubElement(properties, "property", name="oft_id", value=case["artifact_id"])
-        ET.SubElement(properties, "property", name="method", value="z3-smt-check")
+        ET.SubElement(properties, "property", name="method", value=result["method"])
         if case["status"] != "passed":
             ET.SubElement(
                 element,
@@ -150,7 +151,21 @@ def write_junit(result, path):
     ET.ElementTree(suite).write(path, encoding="utf-8", xml_declaration=True)
 
 
-def check_models(root, manifest, out):
+def check_models(root, manifest, out, *, backend="smt"):
+    if backend == "chc":
+        from .chc import interpret as interpret_result
+        from .chc import required_queries
+    elif backend == "smt":
+        interpret_result = interpret
+
+        def required_queries(receipt):
+            return (
+                {"preconditions.smt2", "query.smt2"}
+                if receipt["preconditions"]["result"] == "sat"
+                else {"preconditions.smt2"}
+            )
+    else:
+        raise CheckError(f"Unknown solver backend: {backend}")
     if out.is_symlink():
         raise CheckError("SMT output must not be a symlink")
     root, out = root.resolve(), out.resolve()
@@ -174,19 +189,22 @@ def check_models(root, manifest, out):
         raise CheckError("SMT manifest changed during input capture")
     result = {
         "schema_version": 1,
-        "method": "z3-smt-check",
+        "method": "z3-spacer-check" if backend == "chc" else "z3-smt-check",
         "status": "error",
         "model": config["model"],
         "inputs": hashes,
         "inputs_sha256": digest(canonical(hashes)),
         "assumptions": config["assumptions"],
         "solver_timeout_ms": solver_timeout,
-        "correspondence": "UNSAT establishes the encoding under its assumptions; source correspondence requires separate evidence",
+        "timeout_seconds": timeout,
+        "correspondence": "Solver results establish only the encoding under its assumptions; source correspondence requires separate evidence",
         "commands": [],
     }
     # -I removes the caller's cwd/PYTHONPATH. Load this installed worker explicitly;
     # only the captured model directory/root are added for application imports.
-    worker = str(Path(__file__).with_name("smt_worker.py").resolve())
+    worker = str(
+        Path(__file__).with_name("chc_worker.py" if backend == "chc" else "smt_worker.py").resolve()
+    )
     for spec in config["commands"]:
         directory = out / spec["name"]
         directory.mkdir()
@@ -215,11 +233,11 @@ def check_models(root, manifest, out):
                 raise CheckError(execution.get("error", "SMT worker failed; see diagnostics"))
             receipt = read_json(directory / "receipt.json")
             case["receipt"] = receipt
-            case["status"], case["outcome"] = interpret(receipt, spec)
-            required = ["preconditions.smt2"]
-            if receipt["preconditions"]["result"] == "sat":
-                required.append("query.smt2")
-            case["queries"] = {name: (directory / name).read_text() for name in required}
+            case["status"], case["outcome"] = interpret_result(receipt, spec)
+            required = required_queries(receipt)
+            case["queries"] = {p.name: p.read_text() for p in directory.glob("*.smt2")}
+            if not required <= case["queries"].keys():
+                raise CheckError("Missing required native solver queries")
             if not all(case["queries"].values()):
                 raise CheckError("Missing native SMT-LIB queries")
         except (CheckError, KeyError, TypeError, OSError, ValueError) as exc:

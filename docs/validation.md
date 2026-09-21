@@ -21,7 +21,9 @@ instead of running the respective installers. Alloy remains optional for applica
 projects that do not use model checking. Runner tests execute the real analyzer,
 including counterexamples, impossible witnesses, missing commands and bad models.
 Z3 tests additionally check native SMT-LIB replay, vacuous assumptions, `unknown`
-results, bounded model construction, missing evidence and exact observations.
+results, bounded model construction, missing evidence and exact observations. Spacer tests validate induction queries,
+portable Horn result polarity, reconstructed traces, vacuity, unknown outcomes,
+malformed evidence and mutation counterexamples.
 
 The [CI workflow](../.github/workflows/ci.yml) builds the source distribution and
 then its wheel, installs the wheel, and runs packaged tests/fixtures from a

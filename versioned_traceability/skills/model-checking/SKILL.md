@@ -1,6 +1,6 @@
 ---
 name: model-checking
-description: Author and maintain Alloy and Z3 models for selected requirements, validate their implementation mapping, and replay useful traces against real code.
+description: Author and maintain Alloy, Z3 SMT and CHC/Spacer models for selected requirements, validate their implementation mapping, and replay useful traces against real code.
 ---
 
 Use the project's recovered requirements and linked implementation to select a
@@ -10,7 +10,8 @@ them and their intended meaning is established. Reuse requirement IDs and revisi
 
 Codex authors native Alloy `.als` or Z3Py models and an implementation-specific
 replay harness. Use Alloy for relational structure and bounded state transitions;
-use Z3 for arithmetic or other SMT theories with explicit source semantics.
+use Z3 for arithmetic or other SMT theories with explicit source semantics, and
+CHC/Spacer for safety invariants over arbitrary modeled step counts.
 Committed checks run through the existing analyzer or solver without an LLM. Do not
 introduce an intermediate specification language or a general source translator
 for a slice that a small explicit model can describe.
@@ -42,8 +43,9 @@ exercise additional implementation traces where practical. Preserve useful
 counterexamples as ordinary regression fixtures. Label replay as sampled
 correspondence evidence, not a proof that all implementation behavior is covered.
 
-Read [execution.md](references/execution.md) for Alloy or
-[smt.md](references/smt.md) for Z3 execution and retained evidence. Read only
+Read [execution.md](references/execution.md) for Alloy,
+[smt.md](references/smt.md) for Z3 SMT, or [chc.md](references/chc.md) for
+CHC/Spacer reachability, induction certificates and concrete traces. Read only
 the relevant implementation guide: [Python](references/python.md) or
 [Daml](references/daml.md).
 
