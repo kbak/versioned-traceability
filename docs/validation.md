@@ -9,14 +9,17 @@ available:
 ```sh
 python3 -m pip install -e '.[test]' ruff
 vt install-oft
+vt install-alloy
 python3 -m unittest discover -s tests -v
 ruff check .
 ruff format --check .
 ```
 
-Tests run OFT and example test commands in temporary Git repositories. A missing
-OFT JAR fails the suite. To use an existing JAR, set `VT_OFT_JAR` instead of running
-`vt install-oft`.
+Tests run OFT, Alloy, and example test commands in temporary directories. Missing
+pinned JARs fail the suite. To use existing JARs, set `VT_OFT_JAR` and `VT_ALLOY_JAR`
+instead of running the respective installers. Alloy remains optional for application
+projects that do not use model checking. Runner tests execute the real analyzer,
+including counterexamples, impossible witnesses, missing commands and bad models.
 
 The [CI workflow](../.github/workflows/ci.yml) builds the source distribution and
 then its wheel, installs the wheel, and runs packaged tests/fixtures from a

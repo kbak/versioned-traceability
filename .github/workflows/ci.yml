@@ -17,6 +17,7 @@ jobs:
     timeout-minutes: 15
     env:
       VT_OFT_JAR: ${{ github.workspace }}/.tools/openfasttrace-4.9.0.jar
+      VT_ALLOY_JAR: ${{ github.workspace }}/.tools/alloy-6.2.0.jar
     strategy:
       fail-fast: false
       matrix:
@@ -38,6 +39,7 @@ jobs:
           python -m build
           python -m pip install dist/*.whl 'pytest>=8,<10' 'hypothesis>=6,<7'
           vt install-oft --destination "$GITHUB_WORKSPACE/.tools"
+          vt install-alloy --destination "$GITHUB_WORKSPACE/.tools"
           mkdir "$RUNNER_TEMP/source"
           tar -xzf dist/*.tar.gz --strip-components=1 -C "$RUNNER_TEMP/source"
       - name: Lint

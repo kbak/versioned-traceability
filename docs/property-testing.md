@@ -105,6 +105,10 @@ ID does not prove that prose, tests, and models mean the same thing. Reuse predi
 where practical and review translations; do not assume the guarantee in the model
 instead of checking it.
 
+For bounded Alloy checks, the [model-checking workflow](model-checking.md) adds
+native models, implementation replay and retained solver evidence for selected
+properties, reusing these identities and assumptions.
+
 ## Record check results
 
 Use native JUnit or command results through the existing scope. Python can also

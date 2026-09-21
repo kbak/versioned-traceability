@@ -227,6 +227,25 @@ named tests to run and pass.
 See the [command and evidence reference](docs/contract.md) for configuration and
 limits, and [running the tests](docs/validation.md) for contributing to this tool.
 
+## Check selected properties with Alloy
+
+The [model-checking skill](versioned_traceability/skills/model-checking/SKILL.md)
+guides Codex through building a small native Alloy model from selected requirements
+and their implementation, checking its assumptions, and replaying useful traces
+against actual code. Committed checks run without an agent:
+
+```sh
+vt install-alloy
+vt alloy-check --root examples/model-checking --manifest checks.json --out /tmp/alloy-check-1
+```
+
+Alloy is an optional, checksum-pinned JAR using the existing Java runtime. The
+runner retains native results and traces, input hashes, assumptions, command
+bounds, and JUnit. A pass means the assertions had no counterexample within the
+modeled bounds and the required witnesses existed; it does not prove the model
+matches the implementation. See the [model-checking guide](docs/model-checking.md)
+for execution, evidence, and integration details.
+
 ## Inspect requirement evolution
 
 Use `vt impact --evidence /path/to/evidence.json` to compare saved OFT declarations, exact edges and source-change categories. The [granularity guide](docs/requirement-granularity.md) and [bounded retry example](examples/granular-retries) show stable IDs, independent policy evolution, revision-only maintenance and preserved stale-link rejection. Reports do not infer assertion adequacy or human review effort.

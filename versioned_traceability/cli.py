@@ -5,7 +5,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import __version__
+from . import __version__, alloy
 from .check_output import render_check
 from .common import CheckError
 from .evidence import EXIT_CODES
@@ -61,6 +61,18 @@ def parser():
     )
     root.add_argument("--version", action="version", version=__version__)
     commands = root.add_subparsers(dest="action", required=True)
+    alloy_install = commands.add_parser(
+        "install-alloy", help="Download and checksum-verify optional Alloy 6.2.0"
+    )
+    alloy_install.add_argument("--destination", type=Path, default=alloy.default_jar().parent)
+    modeling = commands.add_parser(
+        "alloy-check", help="Run bounded Alloy checks and retain native evidence/JUnit"
+    )
+    modeling.add_argument("--root", type=Path, default=Path.cwd())
+    modeling.add_argument("--manifest", required=True, help="Manifest path relative to root")
+    modeling.add_argument("--out", type=Path, required=True, help="New or empty evidence directory")
+    modeling.add_argument("--alloy-jar", type=Path, default=alloy.default_jar())
+    modeling.add_argument("--java", default="java")
     impacting = commands.add_parser(
         "impact", help="Compare saved OFT declarations, edges and source-change categories"
     )
@@ -214,6 +226,17 @@ def main(argv=None):
         if args.action == "install-oft":
             print(install_jar(args.destination))
             return 0
+        if args.action == "install-alloy":
+            print(alloy.install_jar(args.destination))
+            return 0
+        if args.action == "alloy-check":
+            result = alloy.check_models(
+                args.root, args.manifest, args.out, args.alloy_jar, args.java
+            )
+            print(f"{result['status']}: {args.out.resolve() / 'result.json'}")
+            for command in result["commands"]:
+                print(f"- {command['name']}: {command['outcome']}")
+            return {"passed": 0, "failed": 1, "error": 2}[result["status"]]
         if args.action == "recover-check":
             if args.recovery is None:
                 repo = args.repo or Path(

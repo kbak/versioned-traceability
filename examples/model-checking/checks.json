@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "model": "ownership.als",
+  "inputs": ["ownership.als", "README.md"],
+  "assumptions": "Static relational example only; at most three users and resources. No implementation correspondence is claimed.",
+  "timeout_seconds": 30,
+  "commands": [
+    {"name": "OwnerOnly", "kind": "check"},
+    {"name": "CanAccess", "kind": "run"}
+  ]
+}
